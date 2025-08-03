@@ -1,0 +1,15 @@
+.DS_Store
+.netlify/
+*.log
+*.local
+.env
+.zed
+.zed/
+.zed*
+.aider
+.aider/
+.aider*
+.vscode/
+.claude/
+.claude*
+.claude
