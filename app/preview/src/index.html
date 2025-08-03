@@ -24,6 +24,7 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="js/procedural-ghost.js"></script>
     <script>
         // Basic Three.js ghost
         let scene, camera, renderer, ghost;
@@ -48,23 +49,16 @@
                 return;
             }
             
-            // Create temporary ghost sphere
-            const geometry = new THREE.SphereGeometry(1, 32, 32);
-            const material = new THREE.MeshPhongMaterial({
-                color: 0xf0f0ff,
-                emissive: 0x404080,
-                emissiveIntensity: 0.2,
-                transparent: true,
-                opacity: 0.9
-            });
-            ghost = new THREE.Mesh(geometry, material);
+            // Create procedural ghost
+            ghost = createProceduralGhost(scene);
             scene.add(ghost);
             
-            // Load GLB ghost model
+            // Try to load GLB model as well
             const loader = new THREE.GLTFLoader();
             loader.load('assets/characters/Ghost/Mesh.glb', 
                 (gltf) => {
-                    // Success - replace sphere with actual ghost
+                    // If GLB loads successfully, replace procedural ghost
+                    console.log('GLB loaded successfully, replacing procedural ghost');
                     scene.remove(ghost);
                     ghost = gltf.scene;
                     ghost.scale.set(3, 3, 3);
@@ -83,17 +77,19 @@
                     });
                     
                     scene.add(ghost);
-                    document.getElementById('info').textContent = 'Ghost loaded! Click to interact.';
+                    document.getElementById('info').textContent = 'GLB Ghost loaded! Click to interact.';
                 },
                 (progress) => {
                     // Progress
-                    const percent = (progress.loaded / progress.total * 100).toFixed(0);
-                    document.getElementById('info').textContent = `Loading ghost... ${percent}%`;
+                    if (progress.total > 0) {
+                        const percent = (progress.loaded / progress.total * 100).toFixed(0);
+                        console.log(`Loading GLB... ${percent}%`);
+                    }
                 },
                 (error) => {
-                    // Error - keep the sphere
-                    console.error('Failed to load GLB:', error);
-                    document.getElementById('info').textContent = 'Using fallback ghost. Click to interact.';
+                    // Error - keep the procedural ghost
+                    console.log('GLB failed to load, using procedural ghost:', error);
+                    document.getElementById('info').textContent = 'Procedural ghost ready! Click to interact.';
                 }
             );
             
@@ -130,10 +126,17 @@
             
             // Animate ghost
             if (ghost) {
-                ghost.position.y = Math.sin(time * 2) * 0.3;
-                ghost.rotation.y += 0.005;
-                ghost.scale.x = 1 + Math.sin(time * 3) * 0.05;
-                ghost.scale.z = 1 + Math.sin(time * 3) * 0.05;
+                // Check if it's procedural ghost or GLB
+                if (ghost.userData && ghost.userData.body) {
+                    // Procedural ghost animation
+                    animateProceduralGhost(ghost, time);
+                } else {
+                    // Simple animation for GLB or fallback
+                    ghost.position.y = Math.sin(time * 2) * 0.3;
+                    ghost.rotation.y += 0.005;
+                    ghost.scale.x = 1 + Math.sin(time * 3) * 0.05;
+                    ghost.scale.z = 1 + Math.sin(time * 3) * 0.05;
+                }
             }
             
             renderer.render(scene, camera);

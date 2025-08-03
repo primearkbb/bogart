@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GLB Fixer</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        button { padding: 10px 20px; margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>GLB Texture Fixer</h1>
+    <p>This fixes your Ghost GLB by removing broken texture references.</p>
+    <button onclick="fixGLB()">Fix Ghost GLB</button>
+    <div id="status"></div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/exporters/GLTFExporter.js"></script>
+    
+    <script>
+    function fixGLB() {
+        const status = document.getElementById('status');
+        status.innerHTML = 'Loading GLB...';
+        
+        const loader = new THREE.GLTFLoader();
+        loader.load('assets/characters/Ghost/Mesh.glb', 
+            (gltf) => {
+                status.innerHTML = 'GLB loaded, fixing textures...';
+                
+                // Remove broken textures and apply simple material
+                gltf.scene.traverse((child) => {
+                    if (child.isMesh) {
+                        // Create a simple white ghost material
+                        child.material = new THREE.MeshPhongMaterial({
+                            color: 0xffffff,
+                            emissive: 0x404040,
+                            transparent: true,
+                            opacity: 0.9
+                        });
+                    }
+                });
+                
+                // Export fixed GLB
+                const exporter = new THREE.GLTFExporter();
+                exporter.parse(gltf.scene, (result) => {
+                    // Download the fixed file
+                    const blob = new Blob([result], { type: 'model/gltf-binary' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'Ghost_Fixed.glb';
+                    a.click();
+                    
+                    status.innerHTML = '✅ Fixed GLB downloaded!';
+                }, { binary: true });
+            },
+            (progress) => {
+                status.innerHTML = `Loading... ${(progress.loaded / progress.total * 100).toFixed(0)}%`;
+            },
+            (error) => {
+                status.innerHTML = '❌ Error: ' + error.message;
+            }
+        );
+    }
+    </script>
+</body>
+</html>
