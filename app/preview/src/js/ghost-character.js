@@ -146,8 +146,11 @@ class GhostCharacter {
             }, 2000);
             
         } catch (error) {
-            console.error("Failed to initialize Ghost Character:", error);
-            document.getElementById('loading').innerHTML = 'Failed to manifest ghost: ' + error.message;
+            // Silent error handling in production
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) {
+                loadingElement.innerHTML = 'Failed to manifest ghost: Please refresh to try again';
+            }
         }
     }
     
