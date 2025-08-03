@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>FBX Loading Test</title>
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; }
+        canvas { width: 100%; height: 100vh; display: block; }
+        #info { position: absolute; top: 10px; left: 10px; color: white; background: rgba(0,0,0,0.7); padding: 10px; }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <div>FBX Loading Test</div>
+        <div id="status">Loading...</div>
+        <div id="details"></div>
+    </div>
+    <canvas id="renderCanvas"></canvas>
+
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    
+    <script>
+        const canvas = document.getElementById('renderCanvas');
+        const engine = new BABYLON.Engine(canvas, true);
+        const scene = new BABYLON.Scene(engine);
+        
+        // Basic scene setup
+        const camera = new BABYLON.FreeCamera("camera", new BABYLON.Vector3(0, 5, -10), scene);
+        camera.setTarget(BABYLON.Vector3.Zero());
+        camera.attachControl(canvas);
+        
+        const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+        
+        const statusEl = document.getElementById('status');
+        const detailsEl = document.getElementById('details');
+        
+        function updateStatus(msg) {
+            statusEl.textContent = msg;
+            console.log(msg);
+        }
+        
+        function updateDetails(msg) {
+            detailsEl.innerHTML += '<br>' + msg;
+            console.log(msg);
+        }
+        
+        // Test FBX loading
+        updateStatus('Testing FBX support...');
+        
+        // Check if FBX loader is available
+        if (BABYLON.SceneLoader.IsPluginForExtensionAvailable('.fbx')) {
+            updateDetails('✅ FBX loader is available');
+        } else {
+            updateDetails('❌ FBX loader is NOT available');
+        }
+        
+        // List available loaders
+        const importers = BABYLON.SceneLoader.GetPluginForExtension('.fbx');
+        updateDetails('Available importers: ' + Object.keys(BABYLON.SceneLoader._registeredPlugins).join(', '));
+        
+        // Try to load the Ghost FBX
+        updateStatus('Attempting to load Ghost.FBX...');
+        
+        BABYLON.SceneLoader.ImportMesh("", "./assets/characters/Ghost/Mesh/", "Mesh.FBX", scene, 
+            (meshes, particleSystems, skeletons) => {
+                updateStatus('✅ FBX loaded successfully!');
+                updateDetails(`Loaded ${meshes.length} meshes, ${skeletons.length} skeletons`);
+                
+                if (meshes.length > 0) {
+                    // Position camera to see the model
+                    const bbox = meshes[0].getBoundingInfo().boundingBox;
+                    const size = bbox.maximum.subtract(bbox.minimum);
+                    const maxSize = Math.max(size.x, size.y, size.z);
+                    camera.position = new BABYLON.Vector3(0, maxSize, maxSize * 2);
+                    camera.setTarget(bbox.center);
+                    
+                    meshes.forEach((mesh, i) => {
+                        updateDetails(`Mesh ${i}: ${mesh.name}`);
+                    });
+                }
+            },
+            (progress) => {
+                updateStatus(`Loading... ${Math.round(progress.loaded/progress.total*100)}%`);
+            },
+            (scene, message, exception) => {
+                updateStatus('❌ Failed to load FBX');
+                updateDetails('Error: ' + message);
+                if (exception) {
+                    updateDetails('Exception: ' + exception.toString());
+                }
+            }
+        );
+        
+        // Render loop
+        engine.runRenderLoop(() => {
+            scene.render();
+        });
+        
+        window.addEventListener('resize', () => {
+            engine.resize();
+        });
+    </script>
+</body>
+</html>

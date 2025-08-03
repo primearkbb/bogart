@@ -106,6 +106,10 @@ class GhostCharacter {
         this.performanceMode = 'auto'; // auto, low, high
         this.lowPerformanceMode = false;
         
+        // Animation tracking
+        this.currentAnimation = null;
+        this.isRiggedCharacter = false;
+        
         // Render loop time tracking
         this.time = 0;
     }
@@ -210,12 +214,24 @@ class GhostCharacter {
         
         // Use basic character builder for stability
         this.characterBuilder = new CharacterBuilder(this.scene);
-        const characterData = this.characterBuilder.createCharacter();
+        const characterData = await this.characterBuilder.createCharacter();
         this.characterParts = characterData.parts;
         this.characterMaterials = characterData.materials;
         this.characterBuilder.createGround(this.characterMaterials);
         this.particleSystem = this.characterBuilder.createParticleSystem(this.characterParts.root);
         this.isAdvancedCharacter = false;
+        
+        // Check if we loaded a rigged model
+        this.isRiggedCharacter = !!(this.characterParts.skeleton && this.characterParts.animationGroups);
+        
+        if (this.isRiggedCharacter) {
+            console.log("✅ Successfully loaded rigged Ghost FBX model!");
+            console.log(`- Skeleton: ${this.characterParts.skeleton ? 'Yes' : 'No'}`);
+            console.log(`- Animations: ${this.characterParts.animationGroups ? this.characterParts.animationGroups.length : 0}`);
+            console.log(`- Meshes: ${this.characterParts.meshes ? this.characterParts.meshes.length : 0}`);
+        } else {
+            console.log("ℹ️ Using procedural ghost model (FBX load failed or not available)");
+        }
         
         // Immediately set character to look at viewer
         this.initializeViewerFocus();
@@ -356,6 +372,34 @@ class GhostCharacter {
         
         const aiState = this.aiController.state;
         
+        // Use rigged animations if available, otherwise use procedural
+        if (this.isRiggedCharacter) {
+            this.updateRiggedAnimations(deltaTime, aiState);
+        } else {
+            this.updateProceduralAnimations(deltaTime, aiState);
+        }
+    }
+    
+    updateRiggedAnimations(deltaTime, aiState) {
+        // Handle rigged character animations
+        const baseFloatIntensity = this.aiController.getFloatIntensity();
+        const performanceMultiplier = 1 + (this.aiController.getPerformanceLevel() - 1) * 0.4;
+        const floatIntensity = baseFloatIntensity * performanceMultiplier;
+        this.characterParts.root.position.y = 0.2 + Math.sin(this.time * 1.2) * floatIntensity;
+        
+        // Play appropriate animations based on AI state
+        if (this.characterParts.animationGroups) {
+            this.playStateAnimation(aiState);
+        }
+        
+        // Character movement removed - character now stays stationary in viewport center
+        // Character rotation is reset to face viewer (180 degrees)
+        if (this.characterParts.root) {
+            this.characterParts.root.rotation.y = BABYLON.Scalar.Lerp(this.characterParts.root.rotation.y, Math.PI, deltaTime * 2);
+        }
+    }
+    
+    updateProceduralAnimations(deltaTime, aiState) {
         // Enhanced floating animation based on performance level - more pronounced for ghost
         const baseFloatIntensity = this.aiController.getFloatIntensity();
         const performanceMultiplier = 1 + (this.aiController.getPerformanceLevel() - 1) * 0.4;
@@ -462,6 +506,48 @@ class GhostCharacter {
             if (this.characterParts.head) {
                 this.characterParts.head.rotation.y = Math.sin(this.time * 2) * 0.3;
             }
+        }
+    }
+    
+    playStateAnimation(aiState) {
+        if (!this.characterParts.animationGroups || this.characterParts.animationGroups.length === 0) return;
+        
+        // Map AI states to animation names
+        const animationMap = {
+            'idle': ['idle', 'float', 'rest'],
+            'performance_trick': ['perform', 'dance', 'trick', 'gesture'],
+            'fourth_wall_break': ['point', 'wave', 'acknowledge'],
+            'audience_engagement': ['friendly', 'greet', 'welcome'],
+            'showing_off': ['show', 'display', 'present'],
+            'phase_interaction': ['phase', 'ethereal', 'magic']
+        };
+        
+        const possibleAnimations = animationMap[aiState.activity] || animationMap['idle'];
+        
+        // Find matching animation
+        let targetAnimation = null;
+        for (const animName of possibleAnimations) {
+            targetAnimation = this.characterParts.animationGroups.find(anim => 
+                anim.name.toLowerCase().includes(animName.toLowerCase())
+            );
+            if (targetAnimation) break;
+        }
+        
+        // If no specific animation found, use the first available or keep idle
+        if (!targetAnimation && this.characterParts.animationGroups.length > 0) {
+            targetAnimation = this.characterParts.idleAnimation || this.characterParts.animationGroups[0];
+        }
+        
+        // Play the animation if different from current
+        if (targetAnimation && targetAnimation !== this.currentAnimation) {
+            // Stop current animation
+            if (this.currentAnimation) {
+                this.currentAnimation.stop();
+            }
+            
+            // Start new animation
+            targetAnimation.start(true, 1.0, targetAnimation.from, targetAnimation.to, false);
+            this.currentAnimation = targetAnimation;
         }
     }
     
@@ -702,8 +788,9 @@ class GhostCharacter {
         if (debugElement) {
             const aiState = this.aiController.state;
             const perfMode = this.lowPerformanceMode ? ' (Low Perf)' : '';
+            const modelType = this.isRiggedCharacter ? ' | Model: RIGGED FBX' : ' | Model: Procedural';
             debugElement.innerHTML = 
-                `FPS: ${this.engine.getFps().toFixed(0)} | Mood: ${aiState.mood} | Activity: ${aiState.activity} | Performance: ${aiState.performanceLevel.toFixed(1)} | Attention: ${aiState.audienceAttention.toFixed(0)}%${perfMode}`;
+                `FPS: ${this.engine.getFps().toFixed(0)} | Mood: ${aiState.mood} | Activity: ${aiState.activity} | Performance: ${aiState.performanceLevel.toFixed(1)} | Attention: ${aiState.audienceAttention.toFixed(0)}%${perfMode}${modelType}`;
         }
     }
     
@@ -711,6 +798,16 @@ class GhostCharacter {
         // Cleanup resource manager (handles timeouts, intervals, etc.)
         if (this.resourceManager) {
             this.resourceManager.cleanup();
+        }
+        
+        // Cleanup animations
+        if (this.currentAnimation) {
+            this.currentAnimation.stop();
+        }
+        if (this.characterParts && this.characterParts.animationGroups) {
+            this.characterParts.animationGroups.forEach(animGroup => {
+                if (animGroup) animGroup.dispose();
+            });
         }
         
         // Cleanup advanced character systems

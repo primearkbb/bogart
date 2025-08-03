@@ -44,12 +44,36 @@ class CharacterBuilder {
         return materials;
     }
     
-    createCharacter() {
+    async createCharacter() {
         const materials = this.createMaterials();
-        const size = this.config.size;
         
         // Create ghost root
         const ghostRoot = new BABYLON.TransformNode("ghostRoot", this.scene);
+        const parts = { root: ghostRoot };
+        
+        try {
+            // Load Ghost FBX mesh
+            const meshResult = await this.loadGhostMesh(ghostRoot, materials);
+            if (meshResult.success) {
+                parts.meshes = meshResult.meshes;
+                parts.skeleton = meshResult.skeleton;
+                parts.animationGroups = meshResult.animationGroups;
+                
+                // Try to load animations
+                await this.loadGhostAnimations(parts);
+                
+                return { parts, materials };
+            }
+        } catch (error) {
+            console.warn("Failed to load Ghost FBX, falling back to procedural:", error);
+            console.warn("Make sure Babylon.js loaders are loaded and FBX files exist");
+        }
+        
+        // Fallback to procedural ghost if FBX loading fails
+        return this.createProceduralCharacter(ghostRoot, materials);
+    }
+
+    createProceduralCharacter(ghostRoot, materials) {
         const parts = { root: ghostRoot };
         
         // Create simplified ghost geometry
@@ -278,6 +302,86 @@ class CharacterBuilder {
         ground.material = materials.ground;
         ground.receiveShadows = true;
         return ground;
+    }
+    
+    async loadGhostMesh(ghostRoot, materials) {
+        const meshPath = "./assets/characters/Ghost/Mesh/";
+        const meshFile = "Mesh.FBX";
+        console.log("Attempting to load Ghost mesh from:", meshPath + meshFile);
+        return new Promise((resolve) => {
+            BABYLON.SceneLoader.ImportMesh("", meshPath, meshFile, this.scene, (meshes, particleSystems, skeletons) => {
+                console.log("FBX load success:", meshes.length, "meshes loaded");
+                if (meshes && meshes.length > 0) {
+                    // Parent all meshes to ghost root
+                    meshes.forEach(mesh => {
+                        if (mesh.parent === null) {
+                            mesh.parent = ghostRoot;
+                        }
+                        
+                        // Apply ghost materials to all meshes
+                        if (mesh.material) {
+                            // Keep existing material but make it ethereal
+                            mesh.material.alpha = 0.85;
+                            mesh.material.alphaMode = BABYLON.Engine.ALPHA_BLEND;
+                            mesh.material.backFaceCulling = false;
+                            
+                            // Add ethereal glow
+                            if (mesh.material.emissiveColor) {
+                                mesh.material.emissiveColor = new BABYLON.Color3(0.15, 0.25, 0.4);
+                            }
+                        } else {
+                            mesh.material = materials.ghost;
+                        }
+                    });
+                    
+                    // Scale the ghost appropriately
+                    ghostRoot.scaling = new BABYLON.Vector3(2, 2, 2);
+                    
+                    resolve({
+                        success: true,
+                        meshes,
+                        skeleton: skeletons[0],
+                        animationGroups: []
+                    });
+                } else {
+                    resolve({ success: false });
+                }
+            }, null, (scene, message, exception) => {
+                console.warn("Failed to load Ghost mesh:", message, exception);
+                console.warn("Path attempted: ./assets/characters/Ghost/Mesh/Mesh.FBX");
+                resolve({ success: false });
+            });
+        });
+    }
+    
+    async loadGhostAnimations(parts) {
+        try {
+            // Load animation file
+            const animResult = await new Promise((resolve) => {
+                BABYLON.SceneLoader.ImportAnimations("./assets/characters/Ghost/animation/", "Gost_Animations.FBX", this.scene, false, null, (animationGroups) => {
+                    resolve({ success: true, animationGroups });
+                }, () => {
+                    resolve({ success: false });
+                });
+            });
+            
+            if (animResult.success && animResult.animationGroups) {
+                parts.animationGroups = animResult.animationGroups;
+                
+                // Set up default idle animation if available
+                const idleAnimation = animResult.animationGroups.find(anim => 
+                    anim.name.toLowerCase().includes('idle') || 
+                    anim.name.toLowerCase().includes('float')
+                );
+                
+                if (idleAnimation) {
+                    parts.idleAnimation = idleAnimation;
+                    idleAnimation.start(true, 1.0, idleAnimation.from, idleAnimation.to, false);
+                }
+            }
+        } catch (error) {
+            console.warn("Failed to load Ghost animations:", error);
+        }
     }
     
     createParticleSystem(emitter) {
