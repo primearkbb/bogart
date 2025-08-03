@@ -403,7 +403,7 @@ class CharacterBuilder {
     }
     
     async loadGhostMesh(ghostRoot, materials) {
-        const meshPath = "assets/characters/Ghost/";
+        const meshPath = "/app/preview/src/assets/characters/Ghost/";
         const meshFile = "Mesh.glb";
         console.log("🔄 Attempting to load Ghost mesh from:", meshPath + meshFile);
         console.log("Full URL:", window.location.origin + window.location.pathname + meshPath + meshFile);
