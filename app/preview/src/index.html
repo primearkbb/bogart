@@ -7,39 +7,15 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <div id="etherealOverlay"></div>
-    <div id="vignette"></div>
-    <div id="performanceSpotlight"></div>
     <div id="loading">Manifesting ethereal spirit...</div>
-    <div id="info">🔊 Click to enable ethereal sounds</div>
     <div id="speechBubble"></div>
-    <div id="debug">Initializing ghostly presence...</div>
     <canvas id="renderCanvas"></canvas>
 
-    <!-- Core Libraries - Using stable release with GLB support -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" onerror="console.log('GSAP failed to load')"></script>
-    <script src="https://cdn.babylonjs.com/babylon.js" onload="console.log('✅ Babylon.js loaded')" onerror="console.error('❌ Babylon.js failed')"></script>
-    <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js" onload="console.log('✅ Babylon materials loaded')" onerror="console.error('❌ Babylon materials failed')"></script>
-    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js" onload="console.log('✅ Babylon loaders loaded')" onerror="console.error('❌ Babylon loaders failed')"></script>
-    <script>
-        // Debug available loaders
-        window.addEventListener('DOMContentLoaded', function() {
-            console.log('🔍 Checking Babylon.js loader support...');
-            if (typeof BABYLON !== 'undefined' && BABYLON.SceneLoader) {
-                console.log('GLB supported:', BABYLON.SceneLoader.IsPluginForExtensionAvailable('.glb'));
-                console.log('GLTF supported:', BABYLON.SceneLoader.IsPluginForExtensionAvailable('.gltf'));
-                console.log('OBJ supported:', BABYLON.SceneLoader.IsPluginForExtensionAvailable('.obj'));
-            }
-        });
-    </script>
+    <!-- Three.js - Lighter and more compatible -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r150/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/examples/js/loaders/GLTFLoader.js"></script>
     
-    <!-- Application Scripts -->
-    <script src="js/ghost-config.js"></script>
-    <script src="js/audio-manager.js"></script>
-    <script src="js/character-builder.js"></script>
-    <script src="js/advanced-character-builder.js"></script>
-    <script src="js/ai-controller.js"></script>
-    <script src="js/ghost-character.js"></script>
-    <script src="js/main.js"></script>
+    <!-- Simple Ghost Application -->
+    <script src="js/clean-ghost.js"></script>
 </body>
 </html>

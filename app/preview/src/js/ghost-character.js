@@ -161,18 +161,17 @@ class GhostCharacter {
         }
     }
     
-    setupEventListeners() {
-        // Audio initialization on user interaction
-        const initAudio = async () => {
+    async initAudio() {
+        try {
             await this.audioManager.init();
-            document.getElementById('info').style.display = 'none';
-        };
-        
-        this.canvas.addEventListener('click', initAudio, { once: true });
-        
-        // Also enable on any user interaction
-        document.addEventListener('click', initAudio, { once: true });
-        document.addEventListener('keydown', initAudio, { once: true });
+        } catch (error) {
+            console.warn('Audio initialization failed:', error);
+        }
+    }
+    
+    setupEventListeners() {
+        // Auto-initialize audio (no user interaction required)
+        this.initAudio();
         
         // Handle window resize and orientation changes
         const handleViewportChange = () => {
@@ -190,66 +189,27 @@ class GhostCharacter {
     }
     
     async createEngine() {
-        const config = GHOST_CHARACTER_CONFIG.engine;
-        console.log('🔧 Attempting to create Babylon.js engine...');
-        console.log('Canvas element:', this.canvas);
-        console.log('Canvas dimensions:', this.canvas.width, 'x', this.canvas.height);
+        console.log('🔧 Creating Babylon.js engine...');
         
-        // Ensure canvas has proper dimensions
-        if (this.canvas.width === 0 || this.canvas.height === 0) {
-            this.canvas.width = 800;
-            this.canvas.height = 600;
-            console.log('⚡ Set default canvas dimensions');
-        }
+        // Set proper canvas dimensions
+        this.canvas.width = 800;
+        this.canvas.height = 600;
         
         try {
-            // Try to create engine with various fallback options
-            let engineOptions = [
-                { ...config }, // Original config
-                { antialias: false, preserveDrawingBuffer: true, stencil: true }, // Reduced config
-                { antialias: false, preserveDrawingBuffer: false, stencil: false }, // Minimal config
-                { antialias: false, preserveDrawingBuffer: false, stencil: false, powerPreference: "high-performance" }, // Try high performance
-                { antialias: false, preserveDrawingBuffer: false, stencil: false, powerPreference: "low-power" }, // Try low power
-                { antialias: false, preserveDrawingBuffer: false, stencil: false, failIfMajorPerformanceCaveat: false }, // Allow performance caveats
-                {} // Default config
-            ];
+            // Create engine with minimal config for compatibility
+            this.engine = new BABYLON.Engine(this.canvas, true, {
+                antialias: false,
+                stencil: false,
+                preserveDrawingBuffer: false,
+                failIfMajorPerformanceCaveat: false
+            });
             
-            // Also try different WebGL context types
-            const contextTypes = [true, false]; // true = webgl, false = experimental-webgl
-            
-            for (let contextType of contextTypes) {
-                for (let i = 0; i < engineOptions.length; i++) {
-                    try {
-                        console.log(`🔧 Engine creation attempt ${i + 1} (webgl: ${contextType}) with config:`, engineOptions[i]);
-                        this.engine = new BABYLON.Engine(this.canvas, contextType, engineOptions[i]);
-                        
-                        if (this.engine) {
-                            console.log('✅ Babylon.js engine created successfully');
-                            console.log('Engine info:', {
-                                webgl: this.engine._gl ? 'available' : 'not available',
-                                version: this.engine.version,
-                                capabilities: this.engine.getCaps()
-                            });
-                            return;
-                        }
-                    } catch (engineError) {
-                        console.warn(`⚠️ Engine creation attempt ${i + 1} (webgl: ${contextType}) failed:`, engineError.message);
-                        continue;
-                    }
-                }
+            if (this.engine) {
+                console.log('✅ Engine created successfully');
+                return;
             }
-            
-            throw new Error('All engine creation attempts failed - WebGL may not be available on this device/browser');
         } catch (error) {
-            console.error('❌ Failed to create Babylon.js engine:', error);
-            
-            // Show user-friendly error message
-            const loadingElement = document.getElementById('loading');
-            if (loadingElement) {
-                loadingElement.innerHTML = 'WebGL not supported on this device/browser. Please try a different browser or enable hardware acceleration.';
-                loadingElement.style.color = '#ff6666';
-            }
-            
+            console.error('❌ Engine creation failed:', error);
             throw error;
         }
     }
