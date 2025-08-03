@@ -255,10 +255,10 @@ class GhostCharacter {
     // createViewportBoundaries method removed - character is now stationary and doesn't need collision boundaries
     
     initializeViewerFocus() {
-        // Ensure character immediately looks at viewer
+        // Ensure character immediately looks at viewer (180 degree turn to face camera)
         if (this.characterParts.root) {
-            // Position character to face viewer
-            this.characterParts.root.rotation.y = 0;
+            // Position character to face viewer - rotate 180 degrees
+            this.characterParts.root.rotation.y = Math.PI;
             this.characterParts.root.position.set(0, 0, 0);
         }
         
@@ -374,14 +374,14 @@ class GhostCharacter {
         // Fourth wall breaking - enhanced head tracking with ethereal movement
         if (this.aiController.isLookingAtViewer()) {
             if (this.characterParts.head) {
-                // More fluid ghostly head movement
+                // More fluid ghostly head movement (facing viewer)
                 const targetRotY = Math.sin(this.time * 0.2) * 0.1;
                 const targetRotX = -0.1 + Math.sin(this.time * 0.15) * 0.03;
                 this.characterParts.head.rotation.y = BABYLON.Scalar.Lerp(this.characterParts.head.rotation.y, targetRotY, deltaTime * 2);
                 this.characterParts.head.rotation.x = BABYLON.Scalar.Lerp(this.characterParts.head.rotation.x, targetRotX, deltaTime * 2);
             }
         } else {
-            // Gentle ethereal drifting movement
+            // Gentle ethereal drifting movement (still facing generally toward viewer)
             if (this.characterParts.head) {
                 const subtleRotY = Math.sin(this.time * 0.08) * 0.03;
                 const subtleRotX = -0.03;
@@ -439,9 +439,9 @@ class GhostCharacter {
         }
         
         // Character movement removed - character now stays stationary in viewport center
-        // Character rotation is reset to face viewer
+        // Character rotation is reset to face viewer (180 degrees)
         if (this.characterParts.root) {
-            this.characterParts.root.rotation.y = BABYLON.Scalar.Lerp(this.characterParts.root.rotation.y, 0, deltaTime * 2);
+            this.characterParts.root.rotation.y = BABYLON.Scalar.Lerp(this.characterParts.root.rotation.y, Math.PI, deltaTime * 2);
         }
         
         // Viewport interaction animation - more ethereal
