@@ -223,7 +223,7 @@ class AdvancedCharacterBuilder {
         const context = texture.getContext();
         const size = texture.getSize();
         
-        // Create ethereal wispy texture with flowing energy
+        // Create static ethereal wispy texture (no real-time animation for performance)
         const imageData = context.createImageData(size.width, size.height);
         const data = imageData.data;
         
@@ -231,16 +231,15 @@ class AdvancedCharacterBuilder {
             for (let x = 0; x < size.width; x++) {
                 const index = (y * size.width + x) * 4;
                 
-                // Ethereal flowing pattern
-                const time = Date.now() * 0.001; // For animation
-                let intensity = 0.8 + Math.sin(x * 0.02 + time) * 0.2;
+                // Static ethereal flowing pattern (removed time-based animation)
+                let intensity = 0.8 + Math.sin(x * 0.02) * 0.2;
                 
-                // Add flowing energy streams
-                const flow = Math.sin(y * 0.05 + x * 0.03 + time * 2) * 0.3;
+                // Add static flowing energy streams
+                const flow = Math.sin(y * 0.05 + x * 0.03) * 0.3;
                 intensity += flow;
                 
-                // Add ethereal sparkles
-                if (Math.random() < 0.001) {
+                // Static ethereal sparkles (deterministic pattern instead of random)
+                if ((x + y * 3) % 1000 === 0) {
                     intensity += 0.5; // Sparkle highlight
                 }
                 
@@ -295,7 +294,7 @@ class AdvancedCharacterBuilder {
             topRadius: 0.9,
             bottomRadius: 0.7,
             height: 1.8,
-            segments: 64,
+            segments: 32, // Reduced segments for better performance
             etherealShape: true
         });
         
@@ -409,7 +408,7 @@ class AdvancedCharacterBuilder {
             topRadius: 0.7,
             bottomRadius: 0.4,
             height: 2.2,
-            segments: 48,
+            segments: 24, // Reduced segments for better performance
             etherealShape: true,
             flowingBottom: true
         });
@@ -614,8 +613,9 @@ class AdvancedCharacterBuilder {
     setupAdvancedAnimations(characterData) {
         const { parts } = characterData;
         
-        // Initialize GSAP timeline for complex animations
+        // Initialize GSAP timeline for complex animations with proper cleanup tracking
         this.animationTimeline = gsap.timeline({ repeat: -1 });
+        this.activeAnimations = new Set(); // Track all active animations for cleanup
         
         // Setup breathing animation
         this.setupBreathingAnimation(parts.body);
@@ -635,31 +635,34 @@ class AdvancedCharacterBuilder {
     setupBreathingAnimation(body) {
         if (!body) return;
         
-        gsap.to(body.scaling, {
+        const breathingAnim = gsap.to(body.scaling, {
             duration: 3,
             y: 1.65,
             ease: "sine.inOut",
             repeat: -1,
             yoyo: true
         });
+        
+        this.activeAnimations.add(breathingAnim);
     }
     
     setupIdleAnimations(parts) {
         // Subtle floating animation
         if (parts.root) {
-            gsap.to(parts.root.position, {
+            const floatAnim = gsap.to(parts.root.position, {
                 duration: 4,
                 y: 0.15,
                 ease: "sine.inOut",
                 repeat: -1,
                 yoyo: true
             });
+            this.activeAnimations.add(floatAnim);
         }
         
         // Tail swaying
         if (parts.tail && parts.tail.joints) {
             parts.tail.joints.forEach((joint, index) => {
-                gsap.to(joint.rotation, {
+                const tailAnim = gsap.to(joint.rotation, {
                     duration: 2 + index * 0.3,
                     z: Math.sin(index) * 0.3,
                     ease: "sine.inOut",
@@ -667,6 +670,7 @@ class AdvancedCharacterBuilder {
                     yoyo: true,
                     delay: index * 0.2
                 });
+                this.activeAnimations.add(tailAnim);
             });
         }
     }
@@ -802,8 +806,8 @@ class AdvancedCharacterBuilder {
     }
     
     createAdvancedParticleSystem() {
-        // Multiple particle systems for layered ethereal effects
-        const etherealSystem = new BABYLON.ParticleSystem("advancedEthereal", 1500, this.scene);
+        // Optimized particle system with reduced count for better performance
+        const etherealSystem = new BABYLON.ParticleSystem("advancedEthereal", 800, this.scene);
         
         // More realistic ethereal texture
         const etherealTexture = new BABYLON.Texture("data:image/svg+xml;base64," + btoa(`
@@ -821,7 +825,7 @@ class AdvancedCharacterBuilder {
         `), this.scene);
         
         etherealSystem.particleTexture = etherealTexture;
-        etherealSystem.emitRate = 180;
+        etherealSystem.emitRate = 120; // Reduced emit rate for better performance
         etherealSystem.minEmitBox = new BABYLON.Vector3(-0.5, 0, -0.5);
         etherealSystem.maxEmitBox = new BABYLON.Vector3(0.5, 0, 0.5);
         
@@ -832,8 +836,8 @@ class AdvancedCharacterBuilder {
         
         etherealSystem.minSize = 0.05;
         etherealSystem.maxSize = 0.4;
-        etherealSystem.minLifeTime = 1.0;
-        etherealSystem.maxLifeTime = 3.0;
+        etherealSystem.minLifeTime = 0.8; // Reduced lifetime for better performance
+        etherealSystem.maxLifeTime = 2.5;
         
         etherealSystem.gravity = new BABYLON.Vector3(0, -0.5, 0); // Gentle downward drift
         etherealSystem.direction1 = new BABYLON.Vector3(-1, 2, -1);
@@ -841,7 +845,7 @@ class AdvancedCharacterBuilder {
         
         etherealSystem.minEmitPower = 0.3;
         etherealSystem.maxEmitPower = 1.2;
-        etherealSystem.updateSpeed = 0.008;
+        etherealSystem.updateSpeed = 0.016; // Reduced update frequency for better performance
         
         etherealSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
         etherealSystem.start();
@@ -875,8 +879,28 @@ class AdvancedCharacterBuilder {
     
     // Cleanup
     dispose() {
+        // Kill main timeline
         if (this.animationTimeline) {
             this.animationTimeline.kill();
+            this.animationTimeline = null;
         }
+        
+        // Kill all tracked animations to prevent memory leaks
+        if (this.activeAnimations) {
+            this.activeAnimations.forEach(animation => {
+                if (animation && typeof animation.kill === 'function') {
+                    animation.kill();
+                }
+            });
+            this.activeAnimations.clear();
+        }
+        
+        // Clear performance animations
+        if (this.performanceAnimations) {
+            this.performanceAnimations = null;
+        }
+        
+        // Clear eye tracking
+        this.eyeTrackingUpdate = null;
     }
 }

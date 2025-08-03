@@ -3,7 +3,7 @@ class AudioManager {
     constructor() {
         this.audioContext = null;
         this.isInitialized = false;
-        this.audioBuffers = new Map();
+        this.audioElements = new Map();
         this.audioFiles = {
             // Sound effects
             'ghost-wind': 'assets/audio/ghost-wind.mp3',
@@ -27,51 +27,70 @@ class AudioManager {
             await this.audioContext.resume();
         }
         
-        // Preload audio files
-        await this.preloadAudioFiles();
+        // Preload audio files using HTML5 Audio elements
+        this.preloadAudioElements();
         
         this.isInitialized = true;
     }
 
-    async preloadAudioFiles() {
-        const loadPromises = Object.entries(this.audioFiles).map(async ([key, url]) => {
+    preloadAudioElements() {
+        Object.entries(this.audioFiles).forEach(([key, url]) => {
             try {
-                const response = await fetch(url);
-                const arrayBuffer = await response.arrayBuffer();
-                const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
-                this.audioBuffers.set(key, audioBuffer);
-                console.log(`Loaded audio: ${key}`);
+                const audio = new Audio();
+                audio.preload = 'auto';
+                audio.volume = 0.8;
+                audio.src = url;
+                
+                // Handle loading events
+                audio.addEventListener('canplaythrough', () => {
+                    console.log(`Audio loaded: ${key}`);
+                });
+                
+                audio.addEventListener('error', (error) => {
+                    console.warn(`Failed to load audio file ${key}:`, error);
+                });
+                
+                this.audioElements.set(key, audio);
             } catch (error) {
-                console.warn(`Failed to load audio file ${key}:`, error);
+                console.warn(`Failed to create audio element for ${key}:`, error);
             }
         });
         
-        await Promise.allSettled(loadPromises);
+        console.log(`Created ${this.audioElements.size} audio elements out of ${Object.keys(this.audioFiles).length}`);
     }
 
     playAudioFile(key, volume = 1.0) {
-        if (!this.isReady() || !this.audioBuffers.has(key)) {
-            console.warn(`Audio not ready or file not found: ${key}`);
+        if (!this.audioElements.has(key)) {
+            console.warn(`Audio file not found: ${key}`);
+            // Fallback to generated sound
+            this.playWhisper();
             return;
         }
 
-        const audioBuffer = this.audioBuffers.get(key);
-        const source = this.audioContext.createBufferSource();
-        const gainNode = this.audioContext.createGain();
+        const audio = this.audioElements.get(key);
         
-        source.buffer = audioBuffer;
-        gainNode.gain.value = volume;
+        // Reset audio to beginning and set volume
+        audio.currentTime = 0;
+        audio.volume = Math.max(0, Math.min(1, volume));
         
-        source.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
+        // Play the audio
+        const playPromise = audio.play();
         
-        source.start();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                console.log(`Playing audio: ${key}`);
+            }).catch(error => {
+                console.warn(`Failed to play audio ${key}:`, error);
+                // Fallback to generated sound
+                this.playWhisper();
+            });
+        }
         
-        return source;
+        return audio;
     }
     
     isReady() {
-        return this.audioContext && this.audioContext.state === 'running';
+        return this.isInitialized && this.audioElements.size > 0;
     }
     
     playSound(soundType) {
@@ -171,6 +190,7 @@ class AudioManager {
     playRandomGhostLine() {
         const voiceLines = ['ghost-welcome', 'ghost-performance', 'ghost-magic', 'ghost-sensing', 'ghost-friendly'];
         const randomLine = voiceLines[Math.floor(Math.random() * voiceLines.length)];
+        console.log(`Playing random ghost line: ${randomLine}`);
         return this.playAudioFile(randomLine, 0.9);
     }
 

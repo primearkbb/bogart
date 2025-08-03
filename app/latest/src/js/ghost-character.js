@@ -1,3 +1,88 @@
+// Resource cleanup manager
+class ResourceManager {
+    constructor() {
+        this.resources = new Set();
+        this.intervals = new Set();
+        this.timeouts = new Set();
+        this.eventListeners = new Map();
+    }
+    
+    addResource(resource) {
+        this.resources.add(resource);
+    }
+    
+    addInterval(id) {
+        this.intervals.add(id);
+    }
+    
+    addTimeout(id) {
+        this.timeouts.add(id);
+    }
+    
+    addEventListener(element, event, handler) {
+        if (!this.eventListeners.has(element)) {
+            this.eventListeners.set(element, []);
+        }
+        this.eventListeners.get(element).push({ event, handler });
+    }
+    
+    cleanup() {
+        this.intervals.forEach(id => clearInterval(id));
+        this.intervals.clear();
+        
+        this.timeouts.forEach(id => clearTimeout(id));
+        this.timeouts.clear();
+        
+        this.eventListeners.forEach((listeners, element) => {
+            listeners.forEach(({ event, handler }) => {
+                element.removeEventListener(event, handler);
+            });
+        });
+        this.eventListeners.clear();
+        
+        this.resources.forEach(resource => {
+            if (resource && typeof resource.dispose === 'function') {
+                resource.dispose();
+            }
+        });
+        this.resources.clear();
+    }
+}
+
+// Performance monitor
+class PerformanceMonitor {
+    constructor() {
+        this.metrics = {
+            fps: 0,
+            memory: 0,
+            renderTime: 0
+        };
+        this.startTime = performance.now();
+    }
+    
+    update(engine) {
+        if (engine) {
+            this.metrics.fps = engine.getFps();
+        }
+        
+        if (performance.memory) {
+            this.metrics.memory = performance.memory.usedJSHeapSize / 1024 / 1024;
+        }
+        
+        if (this.metrics.fps < 30) {
+            // Low FPS detected - performance adjustments needed
+        }
+        
+        if (this.metrics.memory > 100) {
+            // High memory usage detected - cleanup needed
+        }
+    }
+    
+    getMetrics() {
+        return { ...this.metrics };
+    }
+}
+
 // Main Ghost Character class that orchestrates all components
 class GhostCharacter {
     constructor() {
@@ -14,14 +99,29 @@ class GhostCharacter {
         this.aiController = new AIController();
         this.characterBuilder = null;
         this.advancedCharacterBuilder = null;
-        
-        // Resource management
         this.resourceManager = new ResourceManager();
         this.performanceMonitor = new PerformanceMonitor();
-        this.timeouts = new Set();
+        
+        // Performance optimization flags
+        this.performanceMode = 'auto'; // auto, low, high
+        this.lowPerformanceMode = false;
         
         // Render loop time tracking
         this.time = 0;
+    }
+    
+    // Helper method to track timeouts
+    setTrackedTimeout(callback, delay) {
+        const id = setTimeout(callback, delay);
+        this.resourceManager.addTimeout(id);
+        return id;
+    }
+    
+    // Helper method to track intervals
+    setTrackedInterval(callback, delay) {
+        const id = setInterval(callback, delay);
+        this.resourceManager.addInterval(id);
+        return id;
     }
     
     async init() {
@@ -32,33 +132,43 @@ class GhostCharacter {
             this.startRenderLoop();
             
             // Initial ethereal greeting after dramatic pause
-            const greetingTimeout = setTimeout(() => {
+            const greetingTimeout = this.setTrackedTimeout(() => {
                 this.speak('greeting_audience');
                 this.audioManager.playEtherealEntry();
-                // Play welcome voice line
-                setTimeout(() => {
-                    this.audioManager.playGhostWelcome();
-                }, 1000);
+                // Maybe play welcome voice line (50% chance)
+                if (Math.random() < 0.5) {
+                    const welcomeTimeout = this.setTrackedTimeout(() => {
+                        this.audioManager.playGhostWelcome();
+                    }, 3000 + Math.random() * 4000);
+                }
                 const loadingEl = document.getElementById('loading');
                 if (loadingEl) loadingEl.style.display = 'none';
                 
                 // Show initial performance spotlight
                 this.showSpotlight();
             }, 2000);
-            this.timeouts.add(greetingTimeout);
             
         } catch (error) {
-            console.error("Failed to initialize Ghost Character:", error);
-            document.getElementById('loading').innerHTML = 'Failed to manifest ghost: ' + error.message;
+            // Silent error handling in production
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) {
+                loadingElement.innerHTML = 'Failed to manifest ghost: Please refresh to try again';
+            }
         }
     }
     
     setupEventListeners() {
         // Audio initialization on user interaction
-        this.canvas.addEventListener('click', () => {
-            this.audioManager.init();
+        const initAudio = async () => {
+            await this.audioManager.init();
             document.getElementById('info').style.display = 'none';
-        }, { once: true });
+        };
+        
+        this.canvas.addEventListener('click', initAudio, { once: true });
+        
+        // Also enable on any user interaction
+        document.addEventListener('click', initAudio, { once: true });
+        document.addEventListener('keydown', initAudio, { once: true });
         
         // Handle window resize and orientation changes
         const handleViewportChange = () => {
@@ -67,8 +177,8 @@ class GhostCharacter {
             const speechBubble = document.getElementById('speechBubble');
             if (speechBubble && speechBubble.style.display !== 'none') {
                 // Small delay to ensure viewport dimensions are updated
-                setTimeout(() => this.positionSpeechBubble(), 100);
-            }
+                const resizeTimeout = setTimeout(() => this.positionSpeechBubble(), 100);
+                }
         };
         
         window.addEventListener("resize", handleViewportChange);
@@ -98,24 +208,14 @@ class GhostCharacter {
         // Create lighting
         this.createLighting();
         
-        // Create advanced character with fallback
-        try {
-            this.advancedCharacterBuilder = new AdvancedCharacterBuilder(this.scene);
-            const characterData = await this.advancedCharacterBuilder.createAdvancedCharacter();
-            this.characterParts = characterData.parts;
-            this.characterMaterials = characterData.materials;
-            this.isAdvancedCharacter = true;
-        } catch (error) {
-            console.warn("Advanced character failed, using fallback:", error);
-            // Fallback to basic character
-            this.characterBuilder = new CharacterBuilder(this.scene);
-            const characterData = this.characterBuilder.createCharacter();
-            this.characterParts = characterData.parts;
-            this.characterMaterials = characterData.materials;
-            this.characterBuilder.createGround(this.characterMaterials);
-            this.particleSystem = this.characterBuilder.createParticleSystem(this.characterParts.root);
-            this.isAdvancedCharacter = false;
-        }
+        // Use basic character builder for stability
+        this.characterBuilder = new CharacterBuilder(this.scene);
+        const characterData = this.characterBuilder.createCharacter();
+        this.characterParts = characterData.parts;
+        this.characterMaterials = characterData.materials;
+        this.characterBuilder.createGround(this.characterMaterials);
+        this.particleSystem = this.characterBuilder.createParticleSystem(this.characterParts.root);
+        this.isAdvancedCharacter = false;
         
         // Immediately set character to look at viewer
         this.initializeViewerFocus();
@@ -155,10 +255,10 @@ class GhostCharacter {
     // createViewportBoundaries method removed - character is now stationary and doesn't need collision boundaries
     
     initializeViewerFocus() {
-        // Ensure character immediately looks at viewer
+        // Ensure character immediately looks at viewer (180 degree turn to face camera)
         if (this.characterParts.root) {
-            // Position character to face viewer
-            this.characterParts.root.rotation.y = 0;
+            // Position character to face viewer - rotate 180 degrees
+            this.characterParts.root.rotation.y = Math.PI;
             this.characterParts.root.position.set(0, 0, 0);
         }
         
@@ -184,12 +284,11 @@ class GhostCharacter {
         this.positionSpeechBubble();
         
         // Hide after configured time
-        const hideTimeout = setTimeout(() => {
+        const hideTimeout = this.setTrackedTimeout(() => {
             if (speechBubble) {
                 speechBubble.style.display = 'none';
             }
         }, GHOST_CHARACTER_CONFIG.speech.displayDuration);
-        this.timeouts.add(hideTimeout);
     }
     
     positionSpeechBubble() {
@@ -249,7 +348,6 @@ class GhostCharacter {
                     this.characterParts.rightEye.scaling.y = 1;
                 }
             }, 200); // Slightly longer blink for ghostly effect
-            this.timeouts.add(blinkTimeout);
         }
     }
     
@@ -264,22 +362,26 @@ class GhostCharacter {
         const floatIntensity = baseFloatIntensity * performanceMultiplier;
         this.characterParts.root.position.y = 0.2 + Math.sin(this.time * 1.2) * floatIntensity;
         
-        // Advanced eye tracking and viewer focus
-        if (this.advancedCharacterBuilder) {
-            this.advancedCharacterBuilder.updateEyeTracking(deltaTime);
+        // Basic eye tracking
+        if (this.characterParts.leftEye && this.characterParts.rightEye) {
+            // Simple eye following behavior
+            const lookIntensity = 0.1;
+            const time = this.time * 0.5;
+            this.characterParts.leftEye.rotation.y = Math.sin(time) * lookIntensity;
+            this.characterParts.rightEye.rotation.y = Math.sin(time) * lookIntensity;
         }
         
         // Fourth wall breaking - enhanced head tracking with ethereal movement
         if (this.aiController.isLookingAtViewer()) {
             if (this.characterParts.head) {
-                // More fluid ghostly head movement
+                // More fluid ghostly head movement (facing viewer)
                 const targetRotY = Math.sin(this.time * 0.2) * 0.1;
                 const targetRotX = -0.1 + Math.sin(this.time * 0.15) * 0.03;
                 this.characterParts.head.rotation.y = BABYLON.Scalar.Lerp(this.characterParts.head.rotation.y, targetRotY, deltaTime * 2);
                 this.characterParts.head.rotation.x = BABYLON.Scalar.Lerp(this.characterParts.head.rotation.x, targetRotX, deltaTime * 2);
             }
         } else {
-            // Gentle ethereal drifting movement
+            // Gentle ethereal drifting movement (still facing generally toward viewer)
             if (this.characterParts.head) {
                 const subtleRotY = Math.sin(this.time * 0.08) * 0.03;
                 const subtleRotX = -0.03;
@@ -296,10 +398,10 @@ class GhostCharacter {
             const armSpeed = this.getPerformanceArmSpeed();
             
             if (aiState.activity === 'performance_trick') {
-                // Use advanced performance animations
-                const currentTrick = this.aiController.getCurrentTrick();
-                if (this.advancedCharacterBuilder && currentTrick) {
-                    this.advancedCharacterBuilder.playPerformanceAnimation(currentTrick);
+                // Basic performance animations
+                if (this.characterParts.leftArm && this.characterParts.rightArm) {
+                    this.characterParts.leftArm.rotation.z = 0.5 + Math.sin(this.time * 4) * 0.3;
+                    this.characterParts.rightArm.rotation.z = -0.5 - Math.sin(this.time * 4) * 0.3;
                 }
             } else if (aiState.activity === 'fourth_wall_break') {
                 // Advanced pointing gesture using limb chains - more fluid for ghost
@@ -328,24 +430,18 @@ class GhostCharacter {
             }
         }
         
-        // Advanced ghostly tail animation
-        if (this.characterParts.tail && this.characterParts.tail.joints) {
-            // Advanced tail uses joint-based animation
-            // This is handled automatically by the GSAP animations in setupIdleAnimations
-        } else if (this.characterParts.ghostTail) {
-            // Fallback for basic ghostly tail animation
-            this.characterParts.ghostTail.forEach((segment, i) => {
-                segment.position.x = Math.sin(this.time * 1.5 + i * 0.5) * 0.08;
-                segment.rotation.z = Math.sin(this.time * 1.2 + i * 0.3) * 0.15;
-                // Add gentle vertical undulation
-                segment.position.y += Math.sin(this.time * 0.8 + i * 0.4) * 0.02;
-            });
+        // Simple wavy bottom animation for the simplified ghost body
+        if (this.characterParts.body) {
+            // Add subtle body wave animation to enhance the wavy bottom effect
+            const waveTime = this.time * 2.0;
+            this.characterParts.body.rotation.z = Math.sin(waveTime) * 0.03;
+            this.characterParts.body.rotation.x = Math.sin(waveTime * 0.7) * 0.02;
         }
         
         // Character movement removed - character now stays stationary in viewport center
-        // Character rotation is reset to face viewer
+        // Character rotation is reset to face viewer (180 degrees)
         if (this.characterParts.root) {
-            this.characterParts.root.rotation.y = BABYLON.Scalar.Lerp(this.characterParts.root.rotation.y, 0, deltaTime * 2);
+            this.characterParts.root.rotation.y = BABYLON.Scalar.Lerp(this.characterParts.root.rotation.y, Math.PI, deltaTime * 2);
         }
         
         // Viewport interaction animation - more ethereal
@@ -458,8 +554,9 @@ class GhostCharacter {
             // Update AI behavior
             this.aiController.update(deltaTime);
             
-            // Update performance monitoring
+            // Update performance monitoring and adjust quality if needed
             this.performanceMonitor.update(this.engine);
+            this.adjustPerformanceIfNeeded();
             
             // Handle speech with performance categories
             if (this.aiController.shouldSpeak()) {
@@ -471,30 +568,30 @@ class GhostCharacter {
                     case 'fourth_wall_break':
                         speechCategory = 'fourth_wall_break';
                         // Play sensing voice line occasionally
-                        if (Math.random() < 0.3) {
-                            setTimeout(() => this.audioManager.playGhostSensing(), 500);
+                        if (Math.random() < 0.15) {
+                            const sensingTimeout = setTimeout(() => this.audioManager.playGhostSensing(), 1000 + Math.random() * 2000);
                         }
                         break;
                     case 'performance_trick':
                         speechCategory = 'performance_trick';
                         // Play performance or magic voice line
-                        if (Math.random() < 0.4) {
+                        if (Math.random() < 0.2) {
                             const voiceLine = Math.random() < 0.5 ? 'playGhostPerformance' : 'playGhostMagic';
-                            setTimeout(() => this.audioManager[voiceLine](), 500);
+                            const performanceTimeout = setTimeout(() => this.audioManager[voiceLine](), 800 + Math.random() * 3000);
                         }
                         break;
                     case 'audience_engagement':
                         speechCategory = 'audience_engagement';
                         // Play friendly voice line
-                        if (Math.random() < 0.3) {
-                            setTimeout(() => this.audioManager.playGhostFriendly(), 500);
+                        if (Math.random() < 0.15) {
+                            const friendlyTimeout = setTimeout(() => this.audioManager.playGhostFriendly(), 1200 + Math.random() * 2500);
                         }
                         break;
                     case 'showing_off':
                         speechCategory = 'showing_off';
                         // Play magic voice line
-                        if (Math.random() < 0.3) {
-                            setTimeout(() => this.audioManager.playGhostMagic(), 500);
+                        if (Math.random() < 0.12) {
+                            const magicTimeout = setTimeout(() => this.audioManager.playGhostMagic(), 900 + Math.random() * 2800);
                         }
                         break;
                     case 'greeting_audience':
@@ -503,13 +600,16 @@ class GhostCharacter {
                     default:
                         speechCategory = 'observing';
                         // Occasionally play ambient sounds
-                        if (Math.random() < 0.1) {
-                            setTimeout(() => this.audioManager.playRandomAmbientSound(), 1000);
+                        if (Math.random() < 0.05) {
+                            const ambientTimeout = setTimeout(() => this.audioManager.playRandomAmbientSound(), 2000 + Math.random() * 4000);
                         }
                 }
                 
                 this.speak(speechCategory);
-                this.audioManager.playWhisper();
+                // Play ghost voice line randomly (only 30% chance)
+                if (Math.random() < 0.3) {
+                    this.audioManager.playRandomGhostLine();
+                }
                 this.aiController.resetSpeechTimer();
             }
             
@@ -521,12 +621,15 @@ class GhostCharacter {
             
             // Handle phase interactions
             if (this.aiController.state.activity === 'phase_interaction') {
-                if (Math.random() < 0.015) { // 1.5% chance per frame during interaction
+                if (Math.random() < 0.008) { // 0.8% chance per frame during interaction
                     this.speak('phase_interaction');
-                    this.audioManager.playPhaseShift();
+                    // Only occasionally play phase shift sound
+                    if (Math.random() < 0.3) {
+                        this.audioManager.playPhaseShift();
+                    }
                     // Add eerie sound effects during phase interactions
-                    if (Math.random() < 0.5) {
-                        setTimeout(() => this.audioManager.playGhostWind(), 200);
+                    if (Math.random() < 0.2) {
+                        const windTimeout = setTimeout(() => this.audioManager.playGhostWind(), 1500 + Math.random() * 3000);
                     }
                 }
             }
@@ -554,21 +657,58 @@ class GhostCharacter {
         });
     }
     
+    adjustPerformanceIfNeeded() {
+        const metrics = this.performanceMonitor.getMetrics();
+        
+        // Switch to low performance mode if FPS is consistently low
+        if (metrics.fps < 25 && !this.lowPerformanceMode) {
+            this.lowPerformanceMode = true;
+            this.enableLowPerformanceMode();
+        }
+        
+        // Switch back to normal mode if performance improves
+        if (metrics.fps > 45 && this.lowPerformanceMode) {
+            this.lowPerformanceMode = false;
+            this.disableLowPerformanceMode();
+        }
+    }
+    
+    enableLowPerformanceMode() {
+        // Reduce animation frequency
+        if (this.particleSystem) {
+            this.particleSystem.emitRate *= 0.5;
+        }
+        
+        // Reduce render resolution if needed
+        if (this.engine && this.engine.getHardwareScalingLevel() === 1) {
+            this.engine.setHardwareScalingLevel(1.5);
+        }
+    }
+    
+    disableLowPerformanceMode() {
+        // Restore normal animation frequency
+        if (this.particleSystem) {
+            this.particleSystem.emitRate *= 2;
+        }
+        
+        // Restore normal render resolution
+        if (this.engine && this.engine.getHardwareScalingLevel() > 1) {
+            this.engine.setHardwareScalingLevel(1);
+        }
+    }
+    
     updateDebugInfo() {
         const debugElement = document.getElementById('debug');
         if (debugElement) {
             const aiState = this.aiController.state;
+            const perfMode = this.lowPerformanceMode ? ' (Low Perf)' : '';
             debugElement.innerHTML = 
-                `FPS: ${this.engine.getFps().toFixed(0)} | Mood: ${aiState.mood} | Activity: ${aiState.activity} | Performance: ${aiState.performanceLevel.toFixed(1)} | Attention: ${aiState.audienceAttention.toFixed(0)}%`;
+                `FPS: ${this.engine.getFps().toFixed(0)} | Mood: ${aiState.mood} | Activity: ${aiState.activity} | Performance: ${aiState.performanceLevel.toFixed(1)} | Attention: ${aiState.audienceAttention.toFixed(0)}%${perfMode}`;
         }
     }
     
     dispose() {
-        // Clear all timeouts
-        this.timeouts.forEach(id => clearTimeout(id));
-        this.timeouts.clear();
-        
-        // Cleanup resource manager
+        // Cleanup resource manager (handles timeouts, intervals, etc.)
         if (this.resourceManager) {
             this.resourceManager.cleanup();
         }
@@ -582,6 +722,17 @@ class GhostCharacter {
         if (this.particleSystem) {
             this.particleSystem.dispose();
         }
+        
+        // Cleanup audio manager
+        if (this.audioManager) {
+            // Stop any ongoing audio
+            if (this.audioManager.audioContext && this.audioManager.audioContext.state !== 'closed') {
+                this.audioManager.audioContext.close();
+            }
+        }
+        
+        // Cleanup AI controller
+        this.aiController = null;
         
         // Cleanup scene
         if (this.scene) {
