@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: linear-gradient(180deg, #1a0a0a 0%, #3a1a1a 100%);
+            font-family: 'Arial', sans-serif;
+        }
+        canvas { display: block; }
+        #info { 
+            position: absolute; 
+            top: 10px; 
+            left: 10px; 
+            color: #fff; 
+            opacity: 0.5;
+            font-size: 12px;
+            z-index: 100;
+        }
+        #speechBubble {
+            position: absolute;
+            background: #ff3333;
+            border-radius: 20px;
+            padding: 15px 20px;
+            font-size: 18px;
+            color: #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            display: none;
+            max-width: 250px;
+            text-align: center;
+            animation: bounce 0.3s ease-out;
+            font-weight: bold;
+        }
+        #speechBubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid #ff3333;
+        }
+        @keyframes bounce {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        #debug {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: #fff;
+            font-family: monospace;
+            font-size: 11px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">Click to enable sound</div>
+    <div id="speechBubble"></div>
+    <div id="debug"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.Fog(0x1a0a0a, 3, 15);
+        
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+        scene.add(ambientLight);
+        
+        const fireLight = new THREE.PointLight(0xff4444, 1, 10);
+        fireLight.position.set(0, 0, 3);
+        scene.add(fireLight);
+        
+        const backLight = new THREE.DirectionalLight(0x440000, 0.5);
+        backLight.position.set(-5, 5, -5);
+        scene.add(backLight);
+
+        // Devil imp group
+        const imp = new THREE.Group();
+        
+        // Body material
+        const impMaterial = new THREE.MeshPhongMaterial({
+            color: 0xcc0000,
+            shininess: 100,
+            specular: 0x222222
+        });
+        
+        // Head (sphere)
+        const headGeometry = new THREE.SphereGeometry(0.6, 32, 32);
+        const head = new THREE.Mesh(headGeometry, impMaterial);
+        head.position.y = 1.2;
+        head.castShadow = true;
+        imp.add(head);
+        
+        // Body (smaller sphere)
+        const bodyGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+        const body = new THREE.Mesh(bodyGeometry, impMaterial);
+        body.position.y = 0.4;
+        body.scale.y = 1.2;
+        body.castShadow = true;
+        imp.add(body);
+        
+        // Horns
+        const hornGeometry = new THREE.ConeGeometry(0.1, 0.4, 8);
+        const hornMaterial = new THREE.MeshPhongMaterial({
+            color: 0x333333,
+            shininess: 80
+        });
+        
+        const leftHorn = new THREE.Mesh(hornGeometry, hornMaterial);
+        leftHorn.position.set(-0.3, 1.7, 0);
+        leftHorn.rotation.z = -0.3;
+        imp.add(leftHorn);
+        
+        const rightHorn = new THREE.Mesh(hornGeometry, hornMaterial);
+        rightHorn.position.set(0.3, 1.7, 0);
+        rightHorn.rotation.z = 0.3;
+        imp.add(rightHorn);
+        
+        // Tail
+        const tailCurve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(0, 0.2, -0.3),
+            new THREE.Vector3(0.3, 0, -0.5),
+            new THREE.Vector3(0.5, 0.2, -0.7),
+            new THREE.Vector3(0.3, 0.4, -0.9)
+        ]);
+        
+        const tailGeometry = new THREE.TubeGeometry(tailCurve, 20, 0.08, 8, false);
+        const tail = new THREE.Mesh(tailGeometry, impMaterial);
+        imp.add(tail);
+        
+        // Tail tip (spade)
+        const spadeShape = new THREE.Shape();
+        spadeShape.moveTo(0, 0.15);
+        spadeShape.bezierCurveTo(-0.1, 0.1, -0.15, 0, -0.1, -0.1);
+        spadeShape.lineTo(0, 0);
+        spadeShape.lineTo(0.1, -0.1);
+        spadeShape.bezierCurveTo(0.15, 0, 0.1, 0.1, 0, 0.15);
+        
+        const spadeGeometry = new THREE.ExtrudeGeometry(spadeShape, {
+            depth: 0.05,
+            bevelEnabled: false
+        });
+        const tailTip = new THREE.Mesh(spadeGeometry, impMaterial);
+        tailTip.position.set(0.3, 0.4, -0.9);
+        tailTip.rotation.y = Math.PI / 4;
+        imp.add(tailTip);
+        
+        // Arms
+        const armGeometry = new THREE.CylinderGeometry(0.08, 0.12, 0.6, 8);
+        
+        const leftArm = new THREE.Mesh(armGeometry, impMaterial);
+        leftArm.position.set(-0.4, 0.7, 0);
+        leftArm.rotation.z = 0.5;
+        imp.add(leftArm);
+        
+        const rightArm = new THREE.Mesh(armGeometry, impMaterial);
+        rightArm.position.set(0.4, 0.7, 0);
+        rightArm.rotation.z = -0.5;
+        imp.add(rightArm);
+        
+        // Legs
+        const legGeometry = new THREE.CylinderGeometry(0.12, 0.08, 0.5, 8);
+        
+        const leftLeg = new THREE.Mesh(legGeometry, impMaterial);
+        leftLeg.position.set(-0.2, -0.2, 0);
+        imp.add(leftLeg);
+        
+        const rightLeg = new THREE.Mesh(legGeometry, impMaterial);
+        rightLeg.position.set(0.2, -0.2, 0);
+        imp.add(rightLeg);
+        
+        // Face group
+        const face = new THREE.Group();
+        face.position.y = 1.2;
+        
+        // Eyes (glowing yellow)
+        const eyeGeometry = new THREE.SphereGeometry(0.08, 16, 16);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xffff00
+        });
+        
+        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        leftEye.position.set(-0.15, 0.1, 0.5);
+        face.add(leftEye);
+        
+        const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        rightEye.position.set(0.15, 0.1, 0.5);
+        face.add(rightEye);
+        
+        // Pupils
+        const pupilGeometry = new THREE.SphereGeometry(0.04, 8, 8);
+        const pupilMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        
+        const leftPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
+        leftPupil.position.set(-0.15, 0.1, 0.55);
+        face.add(leftPupil);
+        
+        const rightPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
+        rightPupil.position.set(0.15, 0.1, 0.55);
+        face.add(rightPupil);
+        
+        // Mouth (evil grin)
+        const mouthShape = new THREE.Shape();
+        mouthShape.moveTo(-0.2, 0);
+        mouthShape.quadraticCurveTo(0, -0.15, 0.2, 0);
+        mouthShape.quadraticCurveTo(0, 0.05, -0.2, 0);
+        
+        const mouthGeometry = new THREE.ShapeGeometry(mouthShape);
+        const mouthMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x000000,
+            side: THREE.DoubleSide
+        });
+        const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+        mouth.position.set(0, -0.15, 0.5);
+        face.add(mouth);
+        
+        imp.add(face);
+        
+        // Pitchfork (trident)
+        const handleGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.5, 8);
+        const handleMaterial = new THREE.MeshPhongMaterial({ color: 0x4a4a4a });
+        const handle = new THREE.Mesh(handleGeometry, handleMaterial);
+        handle.position.set(0.8, 0.5, 0);
+        imp.add(handle);
+        
+        const prongs = new THREE.Group();
+        for (let i = -1; i <= 1; i++) {
+            const prongGeometry = new THREE.ConeGeometry(0.03, 0.3, 4);
+            const prong = new THREE.Mesh(prongGeometry, handleMaterial);
+            prong.position.set(i * 0.1, 0.15, 0);
+            prongs.add(prong);
+        }
+        prongs.position.set(0.8, 1.1, 0);
+        imp.add(prongs);
+        
+        scene.add(imp);
+        imp.position.set(0, 0.5, 0);
+        
+        // Camera closer
+        camera.position.set(0, 1.5, 5);
+        camera.lookAt(0, 1, 0);
+
+        // Ground (lava-like)
+        const groundGeometry = new THREE.PlaneGeometry(50, 50);
+        const groundMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0x2a0a0a
+        });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -0.5;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // Fire particles
+        const fireCount = 50;
+        const fireGeometry = new THREE.BufferGeometry();
+        const firePositions = new Float32Array(fireCount * 3);
+        const fireColors = new Float32Array(fireCount * 3);
+        
+        for (let i = 0; i < fireCount * 3; i += 3) {
+            firePositions[i] = (Math.random() - 0.5) * 10;
+            firePositions[i + 1] = Math.random() * 5;
+            firePositions[i + 2] = (Math.random() - 0.5) * 10;
+            
+            const intensity = Math.random();
+            fireColors[i] = 1;
+            fireColors[i + 1] = intensity * 0.5;
+            fireColors[i + 2] = 0;
+        }
+        
+        fireGeometry.setAttribute('position', new THREE.BufferAttribute(firePositions, 3));
+        fireGeometry.setAttribute('color', new THREE.BufferAttribute(fireColors, 3));
+        
+        const fireMaterial = new THREE.PointsMaterial({
+            size: 0.2,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
+        const fireParticles = new THREE.Points(fireGeometry, fireMaterial);
+        scene.add(fireParticles);
+
+        // Speech bubble
+        const speechBubble = document.getElementById('speechBubble');
+        
+        // Imp phrases
+        const phrases = {
+            greeting: ["Mwahahaha!", "Welcome to my realm!", "Fresh soul!", "Hello, mortal!", "Hehehehe!"],
+            idle: ["*plots mischief*", "It's hot down here!", "Where's my contract?", "*polishes pitchfork*"],
+            noticed: ["I see you!", "Caught you looking!", "Boo!", "Want to make a deal?", "Don't run away!"],
+            performing: ["Watch this trick!", "Behold my power!", "Dance with me!", "Fire show!", "Ta-da!"],
+            mischievous: ["Let's cause chaos!", "Time for pranks!", "Hehehe...", "This'll be fun!", "Gotcha!"],
+            exploring: ["Off to cause trouble!", "Adventure time!", "Let's explore!", "Onward!"],
+            returning: ["Back to my spot!", "Home sweet underworld!", "That was fun!", "Mission complete!"]
+        };
+        
+        function speak(category) {
+            const text = phrases[category][Math.floor(Math.random() * phrases[category].length)];
+            
+            const vector = new THREE.Vector3();
+            imp.localToWorld(vector.set(0, 2.5, 0));
+            vector.project(camera);
+            
+            const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
+            
+            speechBubble.style.left = x + 'px';
+            speechBubble.style.top = (y - 100) + 'px';
+            speechBubble.style.transform = 'translate(-50%, 0)';
+            speechBubble.textContent = text;
+            speechBubble.style.display = 'block';
+            
+            setTimeout(() => {
+                speechBubble.style.display = 'none';
+            }, 2000 + text.length * 50);
+        }
+
+        // State
+        const state = {
+            homeBase: { x: 0, y: 0.5, z: 0 },
+            targetPos: { x: 0, y: 0.5, z: 0 },
+            activity: 'idle',
+            emotion: 'happy',
+            awareness: 'casual',
+            timers: {
+                activity: 0,
+                emotion: 0,
+                sound: 0,
+                blink: 0,
+                awareness: 0,
+                speak: 0
+            },
+            isMoving: false
+        };
+
+        // Audio
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            const now = audioContext.currentTime;
+            
+            switch(type) {
+                case 'cackle':
+                    // Evil laugh
+                    for(let i = 0; i < 6; i++) {
+                        const osc = audioContext.createOscillator();
+                        const gain = audioContext.createGain();
+                        osc.frequency.value = 150 + Math.random() * 100 + i * 40;
+                        gain.gain.setValueAtTime(0, now + i * 0.1);
+                        gain.gain.linearRampToValueAtTime(0.15, now + i * 0.1 + 0.05);
+                        gain.gain.linearRampToValueAtTime(0, now + i * 0.1 + 0.1);
+                        osc.connect(gain);
+                        gain.connect(audioContext.destination);
+                        osc.start(now + i * 0.1);
+                        osc.stop(now + i * 0.1 + 0.1);
+                    }
+                    break;
+                case 'hiss':
+                    const hiss = audioContext.createOscillator();
+                    const hissGain = audioContext.createGain();
+                    const hissFilter = audioContext.createBiquadFilter();
+                    hissFilter.type = 'highpass';
+                    hissFilter.frequency.value = 1000;
+                    hiss.type = 'sawtooth';
+                    hiss.frequency.value = 800;
+                    hissGain.gain.setValueAtTime(0.1, now);
+                    hissGain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    hiss.connect(hissFilter);
+                    hissFilter.connect(hissGain);
+                    hissGain.connect(audioContext.destination);
+                    hiss.start(now);
+                    hiss.stop(now + 0.5);
+                    break;
+            }
+        }
+
+        function setActivity(newActivity) {
+            state.activity = newActivity;
+            state.timers.activity = 0;
+            
+            switch(newActivity) {
+                case 'prowl':
+                    state.targetPos.x = (Math.random() - 0.5) * 6;
+                    state.targetPos.z = (Math.random() - 0.5) * 4;
+                    state.isMoving = true;
+                    speak('exploring');
+                    break;
+                case 'dance':
+                    state.isMoving = false;
+                    speak('performing');
+                    playSound('cackle');
+                    setEmotion('excited');
+                    break;
+                case 'fly':
+                    state.isMoving = false;
+                    speak('performing');
+                    break;
+                case 'return':
+                    state.targetPos.x = state.homeBase.x;
+                    state.targetPos.z = state.homeBase.z;
+                    state.isMoving = true;
+                    speak('returning');
+                    break;
+                case 'idle':
+                    state.isMoving = false;
+                    if (Math.random() > 0.7) speak('idle');
+                    break;
+            }
+        }
+
+        function setEmotion(emotion) {
+            state.emotion = emotion;
+            
+            switch(emotion) {
+                case 'happy':
+                    eyeMaterial.color.setHex(0xffff00);
+                    fireLight.color.setHex(0xff4444);
+                    break;
+                case 'excited':
+                    eyeMaterial.color.setHex(0xff0000);
+                    fireLight.color.setHex(0xff0000);
+                    fireLight.intensity = 1.5;
+                    break;
+                case 'mischievous':
+                    eyeMaterial.color.setHex(0x00ff00);
+                    fireLight.color.setHex(0x00ff00);
+                    break;
+                case 'angry':
+                    eyeMaterial.color.setHex(0xff00ff);
+                    fireLight.color.setHex(0xff00ff);
+                    fireLight.intensity = 2;
+                    break;
+            }
+        }
+
+        // Animation loop
+        const clock = new THREE.Clock();
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+            
+            // Update timers
+            for(let key in state.timers) {
+                state.timers[key] += delta;
+            }
+            
+            // Fire light flicker
+            fireLight.intensity = 1 + Math.sin(time * 10) * 0.2;
+            
+            // Viewer awareness
+            if (state.awareness === 'casual' && Math.random() < 0.003) {
+                state.awareness = 'noticed';
+                state.timers.awareness = 0;
+                setEmotion('mischievous');
+                speak('noticed');
+                playSound('hiss');
+            } else if (state.awareness === 'noticed' && state.timers.awareness > 2) {
+                if (Math.random() > 0.5) {
+                    state.awareness = 'performing';
+                    setActivity('dance');
+                } else {
+                    state.awareness = 'mischievous';
+                    speak('mischievous');
+                    setEmotion('mischievous');
+                }
+            } else if ((state.awareness === 'performing' || state.awareness === 'mischievous') && 
+                      state.timers.awareness > 6) {
+                state.awareness = 'casual';
+                state.timers.awareness = 0;
+            }
+            
+            // Activity state machine
+            if (state.activity === 'idle' && state.timers.activity > 3) {
+                const activities = ['prowl', 'dance', 'fly'];
+                setActivity(activities[Math.floor(Math.random() * activities.length)]);
+            } else if (state.activity === 'prowl' && !state.isMoving) {
+                if (state.timers.activity > 3) {
+                    setActivity('return');
+                }
+            } else if (state.activity === 'return' && !state.isMoving) {
+                setActivity('idle');
+            } else if ((state.activity === 'dance' || state.activity === 'fly') && 
+                      state.timers.activity > 4) {
+                setActivity('idle');
+            }
+            
+            // Movement
+            if (state.isMoving) {
+                const dx = state.targetPos.x - imp.position.x;
+                const dz = state.targetPos.z - imp.position.z;
+                const distance = Math.sqrt(dx * dx + dz * dz);
+                
+                if (distance > 0.1) {
+                    imp.position.x += dx * 0.03;
+                    imp.position.z += dz * 0.03;
+                    
+                    // Face direction
+                    imp.rotation.y = Math.atan2(dx, dz);
+                    
+                    // Walking animation
+                    leftLeg.rotation.x = Math.sin(time * 8) * 0.3;
+                    rightLeg.rotation.x = -Math.sin(time * 8) * 0.3;
+                } else {
+                    state.isMoving = false;
+                    leftLeg.rotation.x = 0;
+                    rightLeg.rotation.x = 0;
+                }
+            }
+            
+            // Flying animation
+            if (state.activity === 'fly') {
+                imp.position.y = state.homeBase.y + Math.sin(time * 3) * 0.5 + 0.5;
+                imp.rotation.y = time * 2;
+            } else if (state.activity === 'dance') {
+                imp.position.y = state.homeBase.y + Math.abs(Math.sin(time * 6)) * 0.3;
+                imp.rotation.y = time * 3;
+                leftArm.rotation.z = 0.5 + Math.sin(time * 8) * 0.5;
+                rightArm.rotation.z = -0.5 - Math.sin(time * 8 + 0.5) * 0.5;
+            } else {
+                // Normal hover
+                imp.position.y = state.homeBase.y + Math.sin(time * 2) * 0.05;
+                leftArm.rotation.z = 0.5 + Math.sin(time * 3) * 0.1;
+                rightArm.rotation.z = -0.5 - Math.sin(time * 3) * 0.1;
+            }
+            
+            // Face always looks at camera
+            face.lookAt(camera.position);
+            face.rotation.x = 0;
+            face.rotation.z = 0;
+            
+            // Tail animation
+            tail.rotation.y = Math.sin(time * 3) * 0.2;
+            tailTip.rotation.z = Math.sin(time * 4) * 0.3;
+            
+            // Horn wobble
+            leftHorn.rotation.z = -0.3 + Math.sin(time * 2) * 0.05;
+            rightHorn.rotation.z = 0.3 - Math.sin(time * 2) * 0.05;
+            
+            // Pitchfork
+            handle.rotation.z = Math.sin(time) * 0.1;
+            
+            // Blinking
+            if (state.timers.blink > 3 + Math.random() * 3) {
+                leftEye.scale.y = 0.1;
+                rightEye.scale.y = 0.1;
+                setTimeout(() => {
+                    leftEye.scale.set(1, 1, 1);
+                    rightEye.scale.set(1, 1, 1);
+                }, 150);
+                state.timers.blink = 0;
+            }
+            
+            // Emotion changes
+            if (state.timers.emotion > 8 && state.awareness === 'casual') {
+                const emotions = ['happy', 'excited', 'mischievous', 'angry'];
+                setEmotion(emotions[Math.floor(Math.random() * emotions.length)]);
+                state.timers.emotion = 0;
+            }
+            
+            // Random speaking
+            if (state.timers.speak > 10 && Math.random() < 0.3) {
+                if (state.awareness === 'casual' && !speechBubble.style.display) {
+                    speak('idle');
+                }
+                state.timers.speak = 0;
+            }
+            
+            // Update fire particles
+            const fPositions = fireParticles.geometry.attributes.position.array;
+            for (let i = 0; i < fireCount * 3; i += 3) {
+                fPositions[i + 1] += 0.02;
+                fPositions[i] += (Math.random() - 0.5) * 0.01;
+                
+                if (fPositions[i + 1] > 5) {
+                    fPositions[i + 1] = 0;
+                    fPositions[i] = (Math.random() - 0.5) * 10;
+                    fPositions[i + 2] = (Math.random() - 0.5) * 10;
+                }
+            }
+            fireParticles.geometry.attributes.position.needsUpdate = true;
+            
+            // Sound timer
+            if (state.timers.sound > 10 + Math.random() * 5) {
+                playSound(state.awareness === 'performing' ? 'cackle' : 'hiss');
+                state.timers.sound = 0;
+            }
+            
+            // Debug
+            document.getElementById('debug').innerHTML = 
+                `Activity: ${state.activity} | Emotion: ${state.emotion} | Awareness: ${state.awareness}`;
+            
+            renderer.render(scene, camera);
+        }
+
+        // Greeting
+        setTimeout(() => {
+            speak('greeting');
+            playSound('cackle');
+        }, 1000);
+
+        // Start
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        document.addEventListener('click', () => {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            document.getElementById('info').style.display = 'none';
+        }, { once: true });
+
+        animate();
+    </script>
+</body>
+</html>

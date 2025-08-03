@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Bogart - Ghost Demo</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0a0a0a;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+    .stage {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at center, #1a1a2e 0%, #0a0a0a 100%);
+    }
+
+    .ghost {
+        width: 200px;
+        height: 250px;
+        background: radial-gradient(ellipse at center top, #ffffff 0%, #f0f0f0 100%);
+        border-radius: 100px 100px 0 0;
+        position: relative;
+        box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+        transform-origin: center bottom;
+    }
+
+    /* Ghost bottom wavy edge */
+    .ghost::after {
+        content: '';
+        position: absolute;
+        bottom: -20px;
+        left: 0;
+        width: 100%;
+        height: 20px;
+        background: #ffffff;
+        clip-path: polygon(0% 0%, 10% 100%, 20% 0%, 30% 100%, 40% 0%, 50% 100%, 60% 0%, 70% 100%, 80% 0%, 90% 100%, 100% 0%);
+    }
+
+    /* Eyes */
+    .eyes {
+        position: absolute;
+        top: 60px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 30px;
+    }
+
+    .eye {
+        width: 20px;
+        height: 25px;
+        background: #333;
+        border-radius: 50%;
+        animation: blink 3s infinite;
+    }
+
+    @keyframes blink {
+        0%, 90%, 100% { transform: scaleY(1); }
+        95% { transform: scaleY(0.1); }
+    }
+
+    /* Mouth */
+    .mouth {
+        position: absolute;
+        top: 120px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 15px;
+        height: 20px;
+        background: #333;
+        border-radius: 50%;
+    }
+
+    /* Animation styles */
+    .ghost.gentle {
+        animation: gentle 4s ease-in-out infinite;
+    }
+
+    .ghost.dramatic {
+        animation: dramatic 2s ease-in-out infinite;
+    }
+
+    .ghost.bouncy {
+        animation: bouncy 1.5s ease-in-out infinite;
+    }
+
+    .ghost.eerie {
+        animation: eerie 3s ease-in-out infinite;
+    }
+
+    @keyframes gentle {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-10px) rotate(1deg); }
+    }
+
+    @keyframes dramatic {
+        0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
+        25% { transform: translateY(-25px) rotate(-3deg) scale(1.1); }
+        75% { transform: translateY(-15px) rotate(3deg) scale(0.9); }
+    }
+
+    @keyframes bouncy {
+        0%, 100% { transform: translateY(0px); }
+        25% { transform: translateY(-20px) scale(1.1); }
+        50% { transform: translateY(-30px) scale(0.9); }
+        75% { transform: translateY(-10px) scale(1.05); }
+    }
+
+    @keyframes eerie {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        33% { transform: translateY(-8px) rotate(-2deg); }
+        66% { transform: translateY(-15px) rotate(2deg); }
+    }
+
+    /* Mood effects */
+    .ghost.friendly {
+        box-shadow: 0 0 40px rgba(255, 215, 0, 0.5);
+        background: radial-gradient(ellipse at center top, #fffacd 0%, #f0f0f0 100%);
+    }
+
+    .ghost.spooky {
+        box-shadow: 0 0 40px rgba(138, 43, 226, 0.6);
+        background: radial-gradient(ellipse at center top, #e6e6fa 0%, #d8bfd8 100%);
+    }
+
+    .ghost.playful {
+        box-shadow: 0 0 40px rgba(0, 255, 127, 0.5);
+        background: radial-gradient(ellipse at center top, #f0fff0 0%, #e0ffe0 100%);
+    }
+
+    .ghost.excited {
+        box-shadow: 0 0 50px rgba(255, 69, 0, 0.6);
+        background: radial-gradient(ellipse at center top, #ffe4e1 0%, #ffd0dc 100%);
+    }
+
+    .ghost.mysterious {
+        box-shadow: 0 0 30px rgba(72, 61, 139, 0.4);
+        background: radial-gradient(ellipse at center top, #f8f8ff 0%, #e6e6fa 100%);
+    }
+
+    /* Effects */
+    .effects {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+    }
+
+    .sparkle {
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        background: white;
+        border-radius: 50%;
+        animation: sparkle 1.5s ease-in-out;
+    }
+
+    @keyframes sparkle {
+        0%, 100% { opacity: 0; transform: scale(0); }
+        50% { opacity: 1; transform: scale(1); }
+    }
+
+    .glow-ring {
+        position: absolute;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        animation: glow-expand 2s ease-out;
+    }
+
+    @keyframes glow-expand {
+        0% { 
+            width: 200px; 
+            height: 200px; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            opacity: 1; 
+        }
+        100% { 
+            width: 400px; 
+            height: 400px; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            opacity: 0; 
+        }
+    }
+
+    /* Control Panel */
+    .controls {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        min-width: 200px;
+    }
+
+    .control-group {
+        margin-bottom: 15px;
+    }
+
+    .control-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 14px;
+    }
+
+    .control-group select, .control-group input {
+        width: 100%;
+        padding: 5px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+
+    /* Status Panel */
+    .status {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        min-width: 180px;
+    }
+
+    .status-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    /* Demo Buttons */
+    .demo-buttons {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .demo-btn {
+        padding: 12px 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 25px;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 14px;
+    }
+
+    .demo-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+    }
+
+    /* Mode indicator */
+    .mode-indicator {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(0, 100, 0, 0.8);
+        color: white;
+        padding: 10px 15px;
+        border-radius: 20px;
+        font-size: 14px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .mode-indicator.show {
+        opacity: 1;
+    }
+
+    /* Energy level visual */
+    .energy-visual {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 24px;
+    }
+</style>
+</head>
+<body>
+    <div class="stage">
+        <div class="ghost gentle friendly" id="ghost">
+            <div class="eyes">
+                <div class="eye"></div>
+                <div class="eye"></div>
+            </div>
+            <div class="mouth"></div>
+            <div class="energy-visual" id="energy-visual">😊</div>
+        </div>
+        <div class="effects" id="effects"></div>
+    </div>
+
+<div class="controls">
+    <h3>Ghost State Control</h3>
+    
+    <div class="control-group">
+        <label>Mood:</label>
+        <select id="mood">
+            <option value="friendly">Friendly</option>
+            <option value="spooky">Spooky</option>
+            <option value="playful">Playful</option>
+            <option value="excited">Excited</option>
+            <option value="mysterious">Mysterious</option>
+        </select>
+    </div>
+
+    <div class="control-group">
+        <label>Animation Style:</label>
+        <select id="animation">
+            <option value="gentle">Gentle</option>
+            <option value="dramatic">Dramatic</option>
+            <option value="bouncy">Bouncy</option>
+            <option value="eerie">Eerie</option>
+        </select>
+    </div>
+
+    <div class="control-group">
+        <label>Energy Level: <span id="energy-display">5</span></label>
+        <input type="range" id="energy" min="1" max="10" value="5">
+    </div>
+
+    <div class="control-group">
+        <label>Interaction Mode:</label>
+        <select id="interaction-mode">
+            <option value="active">Active</option>
+            <option value="shy">Shy</option>
+            <option value="bold">Bold</option>
+            <option value="curious">Curious</option>
+        </select>
+    </div>
+</div>
+
+<div class="status">
+    <h3>Current State</h3>
+    <div class="status-item">
+        <span>Mood:</span>
+        <span id="current-mood">friendly</span>
+    </div>
+    <div class="status-item">
+        <span>Energy:</span>
+        <span id="current-energy">5</span>
+    </div>
+    <div class="status-item">
+        <span>Animation:</span>
+        <span id="current-animation">gentle</span>
+    </div>
+    <div class="status-item">
+        <span>Mode:</span>
+        <span id="current-mode">ambient</span>
+    </div>
+    <div class="status-item">
+        <span>Voice:</span>
+        <span id="current-voice">warm</span>
+    </div>
+</div>
+
+<div class="demo-buttons">
+    <button class="demo-btn" onclick="triggerMotionDetection()">🚶 Motion Detected</button>
+    <button class="demo-btn" onclick="startConversation()">💬 Start Chat</button>
+    <button class="demo-btn" onclick="triggerEffect('sparkle')">✨ Sparkle</button>
+    <button class="demo-btn" onclick="triggerEffect('glow')">🌟 Glow Ring</button>
+    <button class="demo-btn" onclick="ambientMode()">🌙 Ambient Mode</button>
+    <button class="demo-btn" onclick="randomMoodShift()">🎲 Random Mood</button>
+</div>
+
+<div class="mode-indicator" id="mode-indicator">
+    Ambient Mode
+</div>
+
+<script>
+    // Ghost state object matching the spec
+    let ghostState = {
+        mood: "friendly",
+        energy_level: 5,
+        animation_style: "gentle", 
+        effect_intensity: 3,
+        ambient_audio: "whispers",
+        speaking_voice: "warm",
+        interaction_mode: "active"
+    };
+
+    const ghost = document.getElementById('ghost');
+    const effects = document.getElementById('effects');
+    const modeIndicator = document.getElementById('mode-indicator');
+
+    // Control handlers
+    document.getElementById('mood').addEventListener('change', function(e) {
+        updateGhostState({ mood: e.target.value });
+    });
+
+    document.getElementById('animation').addEventListener('change', function(e) {
+        updateGhostState({ animation_style: e.target.value });
+    });
+
+    document.getElementById('energy').addEventListener('input', function(e) {
+        updateGhostState({ energy_level: parseInt(e.target.value) });
+    });
+
+    document.getElementById('interaction-mode').addEventListener('change', function(e) {
+        updateGhostState({ interaction_mode: e.target.value });
+    });
+
+    // Update ghost state function (simulates AI tool calls)
+    function updateGhostState(newState) {
+        Object.assign(ghostState, newState);
+        
+        // Apply visual changes
+        ghost.className = `ghost ${ghostState.animation_style} ${ghostState.mood}`;
+        
+        // Update animation speed based on energy
+        const duration = Math.max(0.5, 4 - (ghostState.energy_level / 10) * 3);
+        ghost.style.animationDuration = `${duration}s`;
+        
+        // Update energy visual indicator
+        const energyEmojis = ['😴', '😑', '😐', '🙂', '😊', '😄', '😃', '🤩', '🤪', '🚀'];
+        document.getElementById('energy-visual').textContent = energyEmojis[ghostState.energy_level - 1];
+        
+        // Update voice based on mood and energy
+        if (ghostState.mood === 'spooky') {
+            ghostState.speaking_voice = 'spooky';
+        } else if (ghostState.mood === 'playful') {
+            ghostState.speaking_voice = 'childlike';
+        } else if (ghostState.energy_level > 7) {
+            ghostState.speaking_voice = 'theatrical';
+        } else {
+            ghostState.speaking_voice = 'warm';
+        }
+        
+        updateStatusDisplay();
+        logStateChange();
+    }
+
+    // Update status display
+    function updateStatusDisplay() {
+        document.getElementById('current-mood').textContent = ghostState.mood;
+        document.getElementById('current-energy').textContent = ghostState.energy_level;
+        document.getElementById('current-animation').textContent = ghostState.animation_style;
+        document.getElementById('current-voice').textContent = ghostState.speaking_voice;
+        document.getElementById('energy-display').textContent = ghostState.energy_level;
+    }
+
+    // Demo functions simulating the experience flow
+    function triggerMotionDetection() {
+        showModeIndicator('Motion Detected! 👋');
+        
+        // Greeting sequence from spec
+        updateGhostState({
+            mood: 'excited',
+            animation_style: 'bouncy',
+            energy_level: 8,
+            interaction_mode: 'active'
+        });
+        
+        triggerEffect('glow');
+        
+        setTimeout(() => {
+            showModeIndicator('Ready for conversation...');
+        }, 2000);
+    }
+
+    function startConversation() {
+        showModeIndicator('🎃 "Hello! Great costume!" 💬');
+        
+        updateGhostState({
+            mood: 'friendly',
+            animation_style: 'gentle',
+            energy_level: 6,
+            interaction_mode: 'active'
+        });
+        
+        // Simulate conversation responses
+        const responses = [
+            '🎃 "What are you dressed as?"',
+            '👻 "Are you having fun trick-or-treating?"',
+            '🍭 "How much candy have you gotten?"',
+            '🌙 "Do you like scary stories?"'
+        ];
+        
+        let responseIndex = 0;
+        const conversationInterval = setInterval(() => {
+            if (responseIndex < responses.length) {
+                showModeIndicator(responses[responseIndex]);
+                
+                // Update ghost state based on conversation context
+                if (responses[responseIndex].includes('scary')) {
+                    updateGhostState({ mood: 'spooky', animation_style: 'eerie' });
+                } else if (responses[responseIndex].includes('fun')) {
+                    updateGhostState({ mood: 'playful', animation_style: 'bouncy' });
+                }
+                
+                responseIndex++;
+            } else {
+                clearInterval(conversationInterval);
+                ambientMode();
+            }
+        }, 3000);
+    }
+
+    function triggerEffect(effectType) {
+        if (effectType === 'sparkle') {
+            // Create sparkle effects around ghost
+            for (let i = 0; i < 12; i++) {
+                setTimeout(() => {
+                    const sparkle = document.createElement('div');
+                    sparkle.className = 'sparkle';
+                    sparkle.style.left = (Math.random() * 300 + 200) + 'px';
+                    sparkle.style.top = (Math.random() * 300 + 150) + 'px';
+                    effects.appendChild(sparkle);
+                    
+                    setTimeout(() => {
+                        sparkle.remove();
+                    }, 1500);
+                }, i * 100);
+            }
+        } else if (effectType === 'glow') {
+            const glowRing = document.createElement('div');
+            glowRing.className = 'glow-ring';
+            effects.appendChild(glowRing);
+            
+            setTimeout(() => {
+                glowRing.remove();
+            }, 2000);
+        }
+    }
+
+    function ambientMode() {
+        showModeIndicator('Ambient Mode 🌙');
+        document.getElementById('current-mode').textContent = 'ambient';
+        
+        updateGhostState({
+            mood: 'friendly',
+            animation_style: 'gentle',
+            energy_level: 4,
+            interaction_mode: 'active'
+        });
+    }
+
+    function randomMoodShift() {
+        const moods = ['friendly', 'spooky', 'playful', 'excited', 'mysterious'];
+        const animations = ['gentle', 'dramatic', 'bouncy', 'eerie'];
+        
+        updateGhostState({
+            mood: moods[Math.floor(Math.random() * moods.length)],
+            animation_style: animations[Math.floor(Math.random() * animations.length)],
+            energy_level: Math.floor(Math.random() * 10) + 1
+        });
+        
+        showModeIndicator('Mood shifted! 🎲');
+    }
+
+    function showModeIndicator(text) {
+        modeIndicator.textContent = text;
+        modeIndicator.classList.add('show');
+        
+        setTimeout(() => {
+            modeIndicator.classList.remove('show');
+        }, 3000);
+    }
+
+    function logStateChange() {
+        console.log('🎃 Ghost State Updated:', ghostState);
+    }
+
+    // Ambient behaviors simulation
+    function startAmbientBehaviors() {
+        setInterval(() => {
+            if (document.getElementById('current-mode').textContent === 'ambient') {
+                // Random environmental responses
+                if (Math.random() < 0.1) {
+                    const currentEnergy = ghostState.energy_level;
+                    const newEnergy = Math.max(1, Math.min(10, currentEnergy + (Math.random() > 0.5 ? 1 : -1)));
+                    updateGhostState({ energy_level: newEnergy });
+                }
+                
+                // Occasional sparkles
+                if (Math.random() < 0.05) {
+                    triggerEffect('sparkle');
+                }
+            }
+        }, 2000);
+    }
+
+    // Initialize
+    updateStatusDisplay();
+    startAmbientBehaviors();
+    showModeIndicator('Project Bogart Ready! 🎃');
+
+    console.log('🎃 Project Bogart Ghost Demo Initialized');
+    console.log('👻 State management system active');
+    console.log('🎭 Try the demo buttons to see different behaviors!');
+</script>
+
+</body>
+</html>

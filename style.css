@@ -1,0 +1,162 @@
+/* --- Global Styles & Mobile First --- */
+:root {
+    --color-background: #010007;
+    --color-text: #e0e0e0;
+    --color-accent: #00ffff;
+    --font-primary: 'Orbitron', sans-serif;
+    --star-base-size: 10px;
+    --star-touch-size: 20px;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--color-background);
+    color: var(--color-text);
+    font-family: var(--font-primary);
+}
+
+.celestial-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    isolation: isolate; /* New stacking context for z-index */
+}
+
+/* --- Star Elements --- */
+.star {
+    position: absolute;
+    width: var(--star-touch-size);
+    height: var(--star-touch-size);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    z-index: 10;
+    /* Use transparent background for a larger tap area */
+    background-color: transparent; 
+}
+
+/* The visible part of the star */
+.star::after {
+    content: '';
+    display: block;
+    background-color: #fff;
+    border-radius: 50%;
+    width: var(--star-base-size);
+    height: var(--star-base-size);
+    box-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px var(--color-accent);
+    animation: twinkle 2s infinite alternate ease-in-out;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.star.latest::after {
+    width: calc(var(--star-base-size) * 1.8);
+    height: calc(var(--star-base-size) * 1.8);
+    background-color: #ffcc00;
+    box-shadow: 0 0 20px #ffcc00, 0 0 40px #ffcc00, 0 0 60px #ff0000;
+    animation: pulse 1.5s infinite alternate ease-in-out;
+}
+
+.star.preview {
+    /* The animation is now on the pseudo-element, not the container */
+    animation: shooting-star 12s linear infinite;
+}
+
+.star.preview::after {
+    width: 150%;
+    height: 2px;
+    background: linear-gradient(to left, transparent 0%, #fff 50%, var(--color-accent) 100%);
+    box-shadow: 0 0 15px #00ffff, 0 0 25px #00ffff;
+}
+
+/* --- Interaction & Info Panel --- */
+.star.is-active::after {
+    transform: scale(2.5);
+    box-shadow: 0 0 25px #fff, 0 0 45px var(--color-accent), 0 0 65px var(--color-accent);
+}
+
+.version-info {
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--color-text);
+    background-color: rgba(0, 0, 0, 0.75);
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--color-accent);
+    font-size: 1.2em;
+    font-weight: 700;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    z-index: 100;
+}
+
+.version-info.is-visible {
+    opacity: 1;
+}
+
+.instructions {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    z-index: 1;
+}
+.instructions__title {
+    margin: 0;
+    font-weight: 700;
+}
+.instructions__body {
+    margin: 5px 0 0;
+    font-size: 0.8em;
+    max-width: 300px;
+}
+
+/* --- Keyframe Animations (Performant Properties) --- */
+@keyframes twinkle {
+    from { opacity: 0.6; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1.1); }
+}
+
+@keyframes pulse {
+    from { transform: scale(1); filter: brightness(1); }
+    to { transform: scale(1.15); filter: brightness(1.3); }
+}
+
+@keyframes shooting-star {
+    0% { transform: translate(120vw, -20vh) rotate(-45deg); opacity: 1; }
+    70% { opacity: 1; }
+    100% { transform: translate(-20vw, 120vh) rotate(-45deg); opacity: 0; }
+}
+
+/* --- Desktop Enhancements --- */
+@media (min-width: 768px) {
+    :root {
+        --star-base-size: 12px;
+        --star-touch-size: 24px;
+    }
+    
+    /* On desktop, we can show info on hover for a faster experience */
+    .star:hover .version-info {
+        opacity: 1;
+    }
+
+    .star:hover::after {
+        transform: scale(1.8);
+    }
+
+    .star.is-active::after {
+        transform: scale(3); /* Slightly larger active state on desktop */
+    }
+}

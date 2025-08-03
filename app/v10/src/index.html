@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { margin: 0; overflow: hidden; background: #1a1a1a; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+        const pointLight = new THREE.PointLight(0xffffff, 1);
+        pointLight.position.set(5, 5, 5);
+        scene.add(pointLight);
+
+        // Ghost creation
+        const ghostGroup = new THREE.Group();
+        
+        // Body
+        const bodyGeometry = new THREE.SphereGeometry(1, 32, 32);
+        const bodyMaterial = new THREE.MeshPhongMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.7,
+            emissive: 0xaaaaff,
+            emissiveIntensity: 0.2
+        });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        ghostGroup.add(body);
+
+        // Eyes
+        const eyeGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        leftEye.position.set(-0.3, 0.2, 0.8);
+        const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        rightEye.position.set(0.3, 0.2, 0.8);
+        ghostGroup.add(leftEye, rightEye);
+
+        // Mouth
+        const mouthGeometry = new THREE.TorusGeometry(0.3, 0.1, 8, 20, Math.PI);
+        const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+        mouth.position.set(0, -0.2, 0.8);
+        mouth.rotation.z = Math.PI;
+        ghostGroup.add(mouth);
+
+        // Tail
+        const tailGeometry = new THREE.ConeGeometry(0.8, 1.5, 4);
+        const tail = new THREE.Mesh(tailGeometry, bodyMaterial);
+        tail.position.y = -1.2;
+        tail.rotation.z = Math.PI;
+        ghostGroup.add(tail);
+
+        scene.add(ghostGroup);
+        camera.position.z = 5;
+
+        // Ghost state
+        let state = {
+            targetX: 0,
+            targetY: 0,
+            emotion: 'happy',
+            emotionTimer: 0,
+            soundTimer: 0
+        };
+
+        // Audio context for sounds
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playGhostSound() {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(200 + Math.random() * 400, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(
+                100 + Math.random() * 200, 
+                audioContext.currentTime + 0.5
+            );
+            
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        function updateEmotion(emotion) {
+            state.emotion = emotion;
+            
+            switch(emotion) {
+                case 'happy':
+                    mouth.rotation.z = Math.PI;
+                    leftEye.scale.set(1, 1, 1);
+                    rightEye.scale.set(1, 1, 1);
+                    bodyMaterial.emissive = new THREE.Color(0xaaaaff);
+                    break;
+                case 'surprised':
+                    mouth.scale.set(1.5, 1.5, 1);
+                    leftEye.scale.set(1.3, 1.3, 1);
+                    rightEye.scale.set(1.3, 1.3, 1);
+                    bodyMaterial.emissive = new THREE.Color(0xffaaaa);
+                    break;
+                case 'sleepy':
+                    mouth.scale.set(0.5, 0.5, 1);
+                    leftEye.scale.set(1, 0.3, 1);
+                    rightEye.scale.set(1, 0.3, 1);
+                    bodyMaterial.emissive = new THREE.Color(0xaaffaa);
+                    break;
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Autonomous movement
+            if (Math.random() < 0.02) {
+                state.targetX = (Math.random() - 0.5) * 4;
+                state.targetY = (Math.random() - 0.5) * 3;
+            }
+            
+            // Smooth movement
+            ghostGroup.position.x += (state.targetX - ghostGroup.position.x) * 0.05;
+            ghostGroup.position.y += (state.targetY - ghostGroup.position.y) * 0.05;
+            
+            // Floating animation
+            ghostGroup.position.y += Math.sin(Date.now() * 0.001) * 0.01;
+            ghostGroup.rotation.y = Math.sin(Date.now() * 0.0005) * 0.1;
+            
+            // Tail wiggle
+            tail.rotation.x = Math.sin(Date.now() * 0.003) * 0.2;
+            
+            // Emotion changes
+            state.emotionTimer++;
+            if (state.emotionTimer > 200 + Math.random() * 300) {
+                const emotions = ['happy', 'surprised', 'sleepy'];
+                updateEmotion(emotions[Math.floor(Math.random() * emotions.length)]);
+                state.emotionTimer = 0;
+            }
+            
+            // Sound effects
+            state.soundTimer++;
+            if (state.soundTimer > 300 + Math.random() * 500) {
+                playGhostSound();
+                state.soundTimer = 0;
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start with click (for audio context)
+        document.addEventListener('click', () => {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }, { once: true });
+
+        animate();
+    </script>
+</body>
+</html>

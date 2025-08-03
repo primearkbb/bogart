@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: linear-gradient(180deg, #0a0a2e 0%, #1a1a3e 100%);
+        }
+        canvas { display: block; }
+        #info { 
+            position: absolute; 
+            top: 10px; 
+            left: 10px; 
+            color: #fff; 
+            opacity: 0.5;
+            font-size: 12px;
+            z-index: 100;
+        }
+        #debug {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: #fff;
+            font-family: monospace;
+            font-size: 11px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">Click to enable sound</div>
+    <div id="debug"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.Fog(0x0a0a2e, 5, 20);
+        
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        // Lighting for 3D effect
+        const ambientLight = new THREE.AmbientLight(0x404080, 0.6);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 10, 5);
+        directionalLight.castShadow = true;
+        scene.add(directionalLight);
+        
+        const backLight = new THREE.DirectionalLight(0x4444ff, 0.3);
+        backLight.position.set(-5, 5, -5);
+        scene.add(backLight);
+
+        // Ghost group
+        const ghost = new THREE.Group();
+        
+        // Ghost material
+        const ghostMaterial = new THREE.MeshPhongMaterial({
+            color: 0xffffff,
+            emissive: 0x4444ff,
+            emissiveIntensity: 0.2,
+            transparent: true,
+            opacity: 0.9,
+            shininess: 100
+        });
+        
+        // Head (sphere)
+        const headGeometry = new THREE.SphereGeometry(1, 32, 32);
+        const head = new THREE.Mesh(headGeometry, ghostMaterial);
+        head.position.y = 0.5;
+        head.castShadow = true;
+        ghost.add(head);
+        
+        // Body (cylinder that tapers)
+        const bodyGeometry = new THREE.CylinderGeometry(0.9, 1.1, 1.5, 32, 1, true);
+        const body = new THREE.Mesh(bodyGeometry, ghostMaterial);
+        body.position.y = -0.5;
+        body.castShadow = true;
+        ghost.add(body);
+        
+        // Bottom frills (multiple small spheres)
+        const frillGroup = new THREE.Group();
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            const frillGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+            const frill = new THREE.Mesh(frillGeometry, ghostMaterial);
+            frill.position.x = Math.cos(angle) * 0.8;
+            frill.position.z = Math.sin(angle) * 0.8;
+            frill.position.y = -1.2;
+            frillGroup.add(frill);
+        }
+        ghost.add(frillGroup);
+        
+        // Arms
+        const leftArmGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+        const leftArm = new THREE.Mesh(leftArmGeometry, ghostMaterial);
+        leftArm.position.set(-1, 0, 0);
+        leftArm.scale.set(1.2, 0.8, 0.8);
+        ghost.add(leftArm);
+        
+        const rightArmGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+        const rightArm = new THREE.Mesh(rightArmGeometry, ghostMaterial);
+        rightArm.position.set(1, 0, 0);
+        rightArm.scale.set(1.2, 0.8, 0.8);
+        ghost.add(rightArm);
+        
+        // Face group
+        const face = new THREE.Group();
+        
+        // Eyes
+        const eyeGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        
+        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        leftEye.position.set(-0.3, 0.6, 0.9);
+        face.add(leftEye);
+        
+        const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        rightEye.position.set(0.3, 0.6, 0.9);
+        face.add(rightEye);
+        
+        // Eye highlights
+        const highlightGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+        const highlightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        
+        const leftHighlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
+        leftHighlight.position.set(-0.25, 0.65, 0.95);
+        face.add(leftHighlight);
+        
+        const rightHighlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
+        rightHighlight.position.set(0.35, 0.65, 0.95);
+        face.add(rightHighlight);
+        
+        // Mouth
+        const mouthGeometry = new THREE.TorusGeometry(0.2, 0.05, 8, 16, Math.PI);
+        const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+        mouth.position.set(0, 0.3, 0.9);
+        mouth.rotation.z = Math.PI;
+        face.add(mouth);
+        
+        ghost.add(face);
+        
+        // Ghost light
+        const ghostLight = new THREE.PointLight(0x8888ff, 0.5, 5);
+        ghost.add(ghostLight);
+        
+        // Add to scene
+        scene.add(ghost);
+        ghost.position.y = 2;
+        
+        // Camera position
+        camera.position.set(0, 2, 8);
+        camera.lookAt(0, 2, 0);
+
+        // Floor (invisible but receives shadows)
+        const floorGeometry = new THREE.PlaneGeometry(50, 50);
+        const floorMaterial = new THREE.ShadowMaterial({ opacity: 0.3 });
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // State management
+        const state = {
+            homeBase: { x: 0, y: 2, z: 0 },
+            position: { x: 0, y: 2, z: 0 },
+            velocity: { x: 0, y: 0, z: 0 },
+            activity: 'idle',
+            emotion: 'happy',
+            timers: {
+                activity: 0,
+                emotion: 0,
+                sound: 0,
+                blink: 0
+            }
+        };
+
+        // Audio
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            const now = audioContext.currentTime;
+            
+            switch(type) {
+                case 'boo':
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.5);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                    break;
+                case 'giggle':
+                    for(let i = 0; i < 4; i++) {
+                        const o = audioContext.createOscillator();
+                        const g = audioContext.createGain();
+                        o.frequency.value = 400 + i * 100;
+                        o.connect(g);
+                        g.connect(audioContext.destination);
+                        g.gain.setValueAtTime(0, now + i * 0.1);
+                        g.gain.linearRampToValueAtTime(0.1, now + i * 0.1 + 0.05);
+                        g.gain.linearRampToValueAtTime(0, now + i * 0.1 + 0.1);
+                        o.start(now + i * 0.1);
+                        o.stop(now + i * 0.1 + 0.1);
+                    }
+                    break;
+            }
+        }
+
+        function setActivity(newActivity) {
+            state.activity = newActivity;
+            state.timers.activity = 0;
+            
+            switch(newActivity) {
+                case 'explore':
+                    const angle = Math.random() * Math.PI * 2;
+                    const dist = 3 + Math.random() * 2;
+                    state.velocity.x = Math.cos(angle) * 0.03;
+                    state.velocity.z = Math.sin(angle) * 0.03;
+                    break;
+                case 'return':
+                    const dx = state.homeBase.x - ghost.position.x;
+                    const dz = state.homeBase.z - ghost.position.z;
+                    const d = Math.sqrt(dx*dx + dz*dz);
+                    state.velocity.x = (dx/d) * 0.04;
+                    state.velocity.z = (dz/d) * 0.04;
+                    break;
+                case 'spin':
+                    state.velocity.x = 0;
+                    state.velocity.z = 0;
+                    playSound('giggle');
+                    break;
+                case 'bob':
+                    state.velocity.x = 0;
+                    state.velocity.z = 0;
+                    break;
+                case 'idle':
+                    state.velocity.x = 0;
+                    state.velocity.z = 0;
+                    break;
+            }
+        }
+
+        function setEmotion(emotion) {
+            state.emotion = emotion;
+            
+            switch(emotion) {
+                case 'happy':
+                    mouth.rotation.z = Math.PI;
+                    mouth.scale.set(1, 1, 1);
+                    ghostMaterial.emissive.setHex(0x4444ff);
+                    break;
+                case 'surprised':
+                    mouth.scale.set(1.5, 2, 1);
+                    leftEye.scale.set(1.5, 1.5, 1);
+                    rightEye.scale.set(1.5, 1.5, 1);
+                    ghostMaterial.emissive.setHex(0xff4444);
+                    playSound('boo');
+                    break;
+                case 'sleepy':
+                    leftEye.scale.y = 0.3;
+                    rightEye.scale.y = 0.3;
+                    mouth.scale.set(0.5, 0.5, 1);
+                    ghostMaterial.emissive.setHex(0x4444aa);
+                    break;
+                case 'mischievous':
+                    mouth.rotation.z = Math.PI + 0.3;
+                    ghostMaterial.emissive.setHex(0xff44ff);
+                    break;
+            }
+        }
+
+        // Animation loop
+        const clock = new THREE.Clock();
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+            
+            // Update timers
+            for(let key in state.timers) {
+                state.timers[key] += delta;
+            }
+            
+            // Activity state machine
+            if (state.activity === 'idle' && state.timers.activity > 2) {
+                const activities = ['explore', 'spin', 'bob'];
+                setActivity(activities[Math.floor(Math.random() * activities.length)]);
+            } else if (state.activity === 'explore' && state.timers.activity > 4) {
+                setActivity('return');
+            } else if (state.activity === 'return') {
+                const dist = Math.abs(ghost.position.x - state.homeBase.x) + 
+                           Math.abs(ghost.position.z - state.homeBase.z);
+                if (dist < 0.5) {
+                    setActivity('idle');
+                }
+            } else if ((state.activity === 'spin' || state.activity === 'bob') && 
+                      state.timers.activity > 3) {
+                setActivity('idle');
+            }
+            
+            // Apply activity movements
+            ghost.position.x += state.velocity.x;
+            ghost.position.z += state.velocity.z;
+            
+            if (state.activity === 'spin') {
+                ghost.rotation.y += 0.1;
+            } else if (state.activity === 'bob') {
+                ghost.position.y = state.homeBase.y + Math.sin(time * 5) * 0.5;
+            } else {
+                // Normal floating
+                ghost.position.y = state.homeBase.y + Math.sin(time * 2) * 0.1;
+            }
+            
+            // Face movement direction
+            if (Math.abs(state.velocity.x) > 0.01 || Math.abs(state.velocity.z) > 0.01) {
+                const targetRotation = Math.atan2(state.velocity.x, state.velocity.z);
+                ghost.rotation.y += (targetRotation - ghost.rotation.y) * 0.1;
+            }
+            
+            // Arm waving
+            leftArm.rotation.z = -0.5 + Math.sin(time * 3) * 0.3;
+            rightArm.rotation.z = 0.5 - Math.sin(time * 3) * 0.3;
+            
+            // Frill animation
+            frillGroup.children.forEach((frill, i) => {
+                frill.position.y = -1.2 + Math.sin(time * 3 + i) * 0.05;
+            });
+            
+            // Blinking
+            if (state.timers.blink > 3) {
+                leftEye.scale.y = 0.1;
+                rightEye.scale.y = 0.1;
+                setTimeout(() => {
+                    leftEye.scale.y = 1;
+                    rightEye.scale.y = 1;
+                }, 150);
+                state.timers.blink = 0;
+            }
+            
+            // Emotion changes
+            if (state.timers.emotion > 5) {
+                const emotions = ['happy', 'surprised', 'sleepy', 'mischievous'];
+                setEmotion(emotions[Math.floor(Math.random() * emotions.length)]);
+                state.timers.emotion = 0;
+            }
+            
+            // Sound timer
+            if (state.timers.sound > 8) {
+                playSound('boo');
+                state.timers.sound = 0;
+            }
+            
+            // Debug info
+            document.getElementById('debug').innerHTML = `Activity: ${state.activity} | Emotion: ${state.emotion}`;
+            
+            renderer.render(scene, camera);
+        }
+
+        // Start
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        document.addEventListener('click', () => {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            document.getElementById('info').style.display = 'none';
+        }, { once: true });
+
+        animate();
+    </script>
+</body>
+</html>

@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Bogart - Interactive Ghost Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+    body {
+        font-family: Arial, sans-serif;
+        background: #0a0a0a;
+        color: white;
+        overflow: hidden;
+        height: 100vh;
+        position: relative;
+    }
+
+    /* Stage - full screen for ghost */
+    .stage {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at center, #1a1a2e 0%, #0a0a0a 100%);
+    }
+
+    /* Ghost SVG container */
+    .ghost-container {
+        position: relative;
+        transform-origin: center bottom;
+    }
+
+    .ghost-svg {
+        width: 280px;
+        height: 350px;
+        filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+    }
+
+    /* Animation classes */
+    .ghost-container.gentle {
+        animation: gentle 4s ease-in-out infinite;
+    }
+
+    .ghost-container.dramatic {
+        animation: dramatic 2s ease-in-out infinite;
+    }
+
+    .ghost-container.bouncy {
+        animation: bouncy 1.5s ease-in-out infinite;
+    }
+
+    .ghost-container.eerie {
+        animation: eerie 3s ease-in-out infinite;
+    }
+
+    @keyframes gentle {
+        0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
+        50% { transform: translateY(-15px) rotate(1deg) scale(1.02); }
+    }
+
+    @keyframes dramatic {
+        0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
+        25% { transform: translateY(-40px) rotate(-5deg) scale(1.15); }
+        75% { transform: translateY(-20px) rotate(3deg) scale(0.95); }
+    }
+
+    @keyframes bouncy {
+        0%, 100% { transform: translateY(0px) scale(1); }
+        25% { transform: translateY(-30px) scale(1.2) rotate(-2deg); }
+        50% { transform: translateY(-45px) scale(0.8) rotate(2deg); }
+        75% { transform: translateY(-15px) scale(1.1) rotate(-1deg); }
+    }
+
+    @keyframes eerie {
+        0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
+        33% { transform: translateY(-12px) rotate(-3deg) scale(1.05); }
+        66% { transform: translateY(-25px) rotate(2deg) scale(0.98); }
+    }
+
+    /* Mobile responsive controls */
+    .controls-toggle {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        z-index: 1000;
+    }
+
+    .controls-drawer {
+        position: fixed;
+        top: 0;
+        left: -300px;
+        width: 280px;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.95);
+        border-right: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 80px 20px 20px 20px;
+        transition: left 0.3s ease;
+        z-index: 999;
+        overflow-y: auto;
+    }
+
+    .controls-drawer.open {
+        left: 0;
+    }
+
+    .control-group {
+        margin-bottom: 20px;
+    }
+
+    .control-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 14px;
+        color: #ccc;
+    }
+
+    .control-group select,
+    .control-group input[type="range"] {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        font-size: 14px;
+    }
+
+    .control-group input[type="range"] {
+        padding: 4px;
+    }
+
+    /* Status panel - mobile responsive */
+    .status {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        padding: 15px;
+        min-width: 150px;
+        z-index: 500;
+    }
+
+    .status h3 {
+        margin-bottom: 10px;
+        font-size: 16px;
+    }
+
+    .status-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        font-size: 12px;
+    }
+
+    /* Demo buttons - mobile responsive */
+    .demo-buttons {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+        max-width: 90vw;
+        z-index: 500;
+    }
+
+    .demo-btn {
+        padding: 10px 15px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 20px;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .demo-btn:hover,
+    .demo-btn:active {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+    }
+
+    /* Message indicator */
+    .message-indicator {
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 100, 0, 0.9);
+        color: white;
+        padding: 15px 25px;
+        border-radius: 25px;
+        font-size: 16px;
+        opacity: 0;
+        transition: all 0.3s ease;
+        z-index: 500;
+        max-width: 90vw;
+        text-align: center;
+    }
+
+    .message-indicator.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-10px);
+    }
+
+    /* Audio controls */
+    .audio-controls {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        padding: 10px;
+        font-size: 12px;
+        z-index: 500;
+    }
+
+    .audio-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 15px;
+        color: white;
+        padding: 5px 10px;
+        margin: 2px;
+        cursor: pointer;
+        font-size: 11px;
+    }
+
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+        .ghost-svg {
+            width: 220px;
+            height: 280px;
+        }
+        
+        .status {
+            top: 10px;
+            right: 10px;
+            padding: 10px;
+            min-width: 120px;
+        }
+        
+        .status h3 {
+            font-size: 14px;
+        }
+        
+        .status-item {
+            font-size: 11px;
+        }
+        
+        .demo-buttons {
+            bottom: 10px;
+            gap: 8px;
+        }
+        
+        .demo-btn {
+            padding: 8px 12px;
+            font-size: 11px;
+        }
+        
+        .controls-toggle {
+            top: 10px;
+            left: 10px;
+            width: 45px;
+            height: 45px;
+            font-size: 16px;
+        }
+        
+        .audio-controls {
+            bottom: 10px;
+            left: 10px;
+            padding: 8px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .ghost-svg {
+            width: 180px;
+            height: 230px;
+        }
+        
+        .demo-buttons {
+            flex-direction: column;
+            align-items: center;
+            max-width: 200px;
+        }
+        
+        .demo-btn {
+            width: 100%;
+            text-align: center;
+        }
+    }
+
+    /* Effects */
+    .effects {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 10;
+    }
+
+    .sparkle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: white;
+        border-radius: 50%;
+        animation: sparkle 2s ease-in-out;
+    }
+
+    @keyframes sparkle {
+        0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+        50% { opacity: 1; transform: scale(1) rotate(180deg); }
+    }
+
+    .glow-ring {
+        position: absolute;
+        border: 3px solid rgba(255, 255, 255, 0.4);
+        border-radius: 50%;
+        animation: glow-expand 2.5s ease-out;
+    }
+
+    @keyframes glow-expand {
+        0% { 
+            width: 100px; 
+            height: 100px; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            opacity: 1; 
+        }
+        100% { 
+            width: 500px; 
+            height: 500px; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            opacity: 0; 
+        }
+    }
+</style>
+
+</head>
+<body>
+    <!-- Stage -->
+    <div class="stage">
+        <div class="ghost-container gentle" id="ghost-container">
+            <svg class="ghost-svg" viewBox="0 0 280 350" xmlns="http://www.w3.org/2000/svg">
+                <!-- Ghost body with morphing capabilities -->
+                <path id="ghost-body" 
+                      d="M140 40 C90 40, 50 80, 50 140 L50 250 C50 270, 60 280, 70 280 C80 270, 90 280, 100 280 C110 270, 120 280, 130 280 C140 270, 150 280, 160 280 C170 270, 180 280, 190 280 C200 270, 210 280, 220 280 C230 270, 230 250, 230 250 L230 140 C230 80, 190 40, 140 40 Z" 
+                      fill="white" 
+                      stroke="rgba(255,255,255,0.8)" 
+                      stroke-width="2"/>
+
+            <!-- Left eye with blinking and expression -->
+            <ellipse id="left-eye" cx="110" cy="120" rx="15" ry="20" fill="#333">
+                <animate id="left-blink" attributeName="ry" values="20;2;20" dur="3s" repeatCount="indefinite"/>
+            </ellipse>
+            
+            <!-- Right eye with blinking and expression -->
+            <ellipse id="right-eye" cx="170" cy="120" rx="15" ry="20" fill="#333">
+                <animate id="right-blink" attributeName="ry" values="20;2;20" dur="3s" repeatCount="indefinite"/>
+            </ellipse>
+            
+            <!-- Mouth with speaking animation -->
+            <ellipse id="mouth" cx="140" cy="170" rx="12" ry="15" fill="#333">
+                <animate id="mouth-speak" attributeName="ry" values="15;25;15" dur="1s" repeatCount="indefinite" begin="indefinite"/>
+            </ellipse>
+            
+            <!-- Glow effect -->
+            <ellipse id="ghost-glow" cx="140" cy="160" rx="90" ry="130" fill="url(#glowGradient)" opacity="0.3"/>
+            
+            <defs>
+                <radialGradient id="glowGradient" cx="50%" cy="30%">
+                    <stop offset="0%" stop-color="rgba(255,255,255,0.6)"/>
+                    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+                </radialGradient>
+            </defs>
+        </svg>
+    </div>
+    
+    <div class="effects" id="effects"></div>
+</div>
+
+<!-- Mobile-responsive controls -->
+<div class="controls-toggle" id="controls-toggle" onclick="toggleControls()">
+    ⚙️
+</div>
+
+<div class="controls-drawer" id="controls-drawer">
+    <h3 style="margin-bottom: 20px; color: #4CAF50;">Ghost State Control</h3>
+    
+    <div class="control-group">
+        <label>Mood:</label>
+        <select id="mood">
+            <option value="friendly">Friendly</option>
+            <option value="spooky">Spooky</option>
+            <option value="playful">Playful</option>
+            <option value="excited">Excited</option>
+            <option value="mysterious">Mysterious</option>
+        </select>
+    </div>
+
+    <div class="control-group">
+        <label>Animation Style:</label>
+        <select id="animation">
+            <option value="gentle">Gentle</option>
+            <option value="dramatic">Dramatic</option>
+            <option value="bouncy">Bouncy</option>
+            <option value="eerie">Eerie</option>
+        </select>
+    </div>
+
+    <div class="control-group">
+        <label>Energy Level: <span id="energy-display">5</span></label>
+        <input type="range" id="energy" min="1" max="10" value="5">
+    </div>
+
+    <div class="control-group">
+        <label>Interaction Mode:</label>
+        <select id="interaction-mode">
+            <option value="active">Active</option>
+            <option value="shy">Shy</option>
+            <option value="bold">Bold</option>
+            <option value="curious">Curious</option>
+        </select>
+    </div>
+
+    <div class="control-group">
+        <label>Speaking Voice:</label>
+        <select id="voice">
+            <option value="warm">Warm</option>
+            <option value="spooky">Spooky</option>
+            <option value="childlike">Childlike</option>
+            <option value="theatrical">Theatrical</option>
+        </select>
+    </div>
+</div>
+
+<!-- Status Panel -->
+<div class="status">
+    <h3>Current State</h3>
+    <div class="status-item">
+        <span>Mood:</span>
+        <span id="current-mood">friendly</span>
+    </div>
+    <div class="status-item">
+        <span>Energy:</span>
+        <span id="current-energy">5</span>
+    </div>
+    <div class="status-item">
+        <span>Mode:</span>
+        <span id="current-mode">ambient</span>
+    </div>
+    <div class="status-item">
+        <span>Voice:</span>
+        <span id="current-voice">warm</span>
+    </div>
+</div>
+
+<!-- Demo Buttons -->
+<div class="demo-buttons">
+    <button class="demo-btn" onclick="triggerMotionDetection()">🚶 Motion</button>
+    <button class="demo-btn" onclick="startConversation()">💬 Chat</button>
+    <button class="demo-btn" onclick="triggerEffect('sparkle')">✨ Sparkle</button>
+    <button class="demo-btn" onclick="triggerEffect('glow')">🌟 Glow</button>
+    <button class="demo-btn" onclick="ambientMode()">🌙 Ambient</button>
+</div>
+
+<!-- Audio Controls -->
+<div class="audio-controls">
+    <div>🔊 Audio:</div>
+    <button class="audio-btn" onclick="playAmbientAudio('whispers')">Whispers</button>
+    <button class="audio-btn" onclick="playAmbientAudio('wind')">Wind</button>
+    <button class="audio-btn" onclick="playVoiceClip('greeting')">Hello</button>
+    <button class="audio-btn" onclick="playVoiceClip('spooky')">Boo!</button>
+    <button class="audio-btn" onclick="stopAllAudio()">Stop</button>
+</div>
+
+<!-- Message Indicator -->
+<div class="message-indicator" id="message-indicator">
+    Welcome to Project Bogart!
+</div>
+
+<!-- Hidden audio elements -->
+<audio id="ambient-whispers" loop>
+    <source src="data:audio/wav;base64,UklGRtIAAABXQVZFZm10IBAAAAABAAABACAAAAABAAAABAAABBAGATEAAA==" type="audio/wav">
+</audio>
+<audio id="ambient-wind" loop>
+    <source src="data:audio/wav;base64,UklGRtIAAABXQVZFZm10IBAAAAABAAABACAAAAABAAAABAAABBAGATEAAA==" type="audio/wav">
+</audio>
+<audio id="voice-greeting">
+    <source src="data:audio/wav;base64,UklGRtIAAABXQVZFZm10IBAAAAABAAABACAAAAABAAAABAAABBAGATEAAA==" type="audio/wav">
+</audio>
+<audio id="voice-spooky">
+    <source src="data:audio/wav;base64,UklGRtIAAABXQVZFZm10IBAAAAABAAABACAAAAABAAAABAAABBAGATEAAA==" type="audio/wav">
+</audio>
+
+<script>
+    // Ghost state matching the spec
+    let ghostState = {
+        mood: "friendly",
+        energy_level: 5,
+        animation_style: "gentle",
+        effect_intensity: 3,
+        ambient_audio: "whispers",
+        speaking_voice: "warm",
+        interaction_mode: "active"
+    };
+
+    // DOM elements
+    const ghostContainer = document.getElementById('ghost-container');
+    const ghostBody = document.getElementById('ghost-body');
+    const leftEye = document.getElementById('left-eye');
+    const rightEye = document.getElementById('right-eye');
+    const mouth = document.getElementById('mouth');
+    const ghostGlow = document.getElementById('ghost-glow');
+    const effects = document.getElementById('effects');
+    const messageIndicator = document.getElementById('message-indicator');
+    const controlsDrawer = document.getElementById('controls-drawer');
+
+    // Control event listeners
+    document.getElementById('mood').addEventListener('change', function(e) {
+        updateGhostState({ mood: e.target.value });
+    });
+
+    document.getElementById('animation').addEventListener('change', function(e) {
+        updateGhostState({ animation_style: e.target.value });
+    });
+
+    document.getElementById('energy').addEventListener('input', function(e) {
+        updateGhostState({ energy_level: parseInt(e.target.value) });
+    });
+
+    document.getElementById('interaction-mode').addEventListener('change', function(e) {
+        updateGhostState({ interaction_mode: e.target.value });
+    });
+
+    document.getElementById('voice').addEventListener('change', function(e) {
+        updateGhostState({ speaking_voice: e.target.value });
+    });
+
+    // Mobile controls toggle
+    function toggleControls() {
+        controlsDrawer.classList.toggle('open');
+    }
+
+    // Update ghost state with dynamic morphing
+    function updateGhostState(newState) {
+        Object.assign(ghostState, newState);
+        
+        // Update animation class
+        ghostContainer.className = `ghost-container ${ghostState.animation_style}`;
+        
+        // Update animation speed based on energy
+        const duration = Math.max(0.8, 4 - (ghostState.energy_level / 10) * 3);
+        ghostContainer.style.animationDuration = `${duration}s`;
+        
+        // Morph ghost based on mood
+        morphGhostForMood(ghostState.mood);
+        
+        // Update glow effect
+        updateGlowEffect(ghostState.mood, ghostState.energy_level);
+        
+        // Update eye expressions
+        updateEyeExpression(ghostState.mood, ghostState.energy_level);
+        
+        updateStatusDisplay();
+        logStateChange();
+    }
+
+    // Dynamic ghost morphing based on mood
+    function morphGhostForMood(mood) {
+        let bodyPath, glowColor;
+        
+        switch(mood) {
+            case 'friendly':
+                bodyPath = "M140 40 C90 40, 50 80, 50 140 L50 250 C50 270, 60 280, 70 280 C80 270, 90 280, 100 280 C110 270, 120 280, 130 280 C140 270, 150 280, 160 280 C170 270, 180 280, 190 280 C200 270, 210 280, 220 280 C230 270, 230 250, 230 250 L230 140 C230 80, 190 40, 140 40 Z";
+                glowColor = "rgba(255, 215, 0, 0.4)";
+                mouth.setAttribute('ry', '15');
+                break;
+            case 'spooky':
+                bodyPath = "M140 40 C85 40, 45 80, 45 140 L45 250 C45 275, 55 285, 65 285 C75 270, 85 285, 95 285 C105 270, 115 285, 125 285 C135 270, 145 285, 155 285 C165 270, 175 285, 185 285 C195 270, 205 285, 215 285 C225 270, 235 250, 235 250 L235 140 C235 80, 195 40, 140 40 Z";
+                glowColor = "rgba(138, 43, 226, 0.5)";
+                mouth.setAttribute('ry', '8');
+                mouth.setAttribute('cy', '175');
+                break;
+            case 'playful':
+                bodyPath = "M140 40 C95 40, 55 80, 55 140 L55 250 C55 265, 65 275, 75 275 C85 265, 95 275, 105 275 C115 265, 125 275, 135 275 C145 265, 155 275, 165 275 C175 265, 185 275, 195 275 C205 265, 215 275, 225 275 C235 265, 225 250, 225 250 L225 140 C225 80, 185 40, 140 40 Z";
+                glowColor = "rgba(0, 255, 127, 0.4)";
+                mouth.setAttribute('ry', '20');
+                mouth.setAttribute('cy', '170');
+                break;
+            case 'excited':
+                bodyPath = "M140 35 C85 35, 40 75, 40 135 L40 245 C40 270, 50 285, 60 285 C70 270, 80 285, 90 285 C100 270, 110 285, 120 285 C130 270, 140 285, 150 285 C160 270, 170 285, 180 285 C190 270, 200 285, 210 285 C220 270, 230 285, 240 285 C250 270, 240 245, 240 245 L240 135 C240 75, 195 35, 140 35 Z";
+                glowColor = "rgba(255, 69, 0, 0.6)";
+                mouth.setAttribute('ry', '25');
+                mouth.setAttribute('cy', '165');
+                break;
+            case 'mysterious':
+                bodyPath = "M140 45 C95 45, 55 85, 55 145 L55 255 C55 270, 65 275, 75 275 C85 270, 95 275, 105 275 C115 270, 125 275, 135 275 C145 270, 155 275, 165 275 C175 270, 185 275, 195 275 C205 270, 215 275, 225 275 C235 270, 225 255, 225 255 L225 145 C225 85, 185 45, 140 45 Z";
+                glowColor = "rgba(72, 61, 139, 0.4)";
+                mouth.setAttribute('ry', '10');
+                mouth.setAttribute('cy', '175');
+                break;
+        }
+        
+        // Animate the body morphing
+        ghostBody.style.transition = 'all 0.5s ease';
+        ghostBody.setAttribute('d', bodyPath);
+        
+        // Update glow color
+        ghostGlow.style.fill = glowColor;
+    }
+
+    // Update glow effect based on mood and energy
+    function updateGlowEffect(mood, energy) {
+        const intensity = energy / 10;
+        ghostGlow.style.opacity = 0.2 + (intensity * 0.4);
+        
+        // Add pulsing based on energy
+        if (energy > 7) {
+            ghostGlow.style.animation = 'pulse 1s ease-in-out infinite alternate';
+        } else {
+            ghostGlow.style.animation = 'none';
+        }
+    }
+
+    // Update eye expressions
+    function updateEyeExpression(mood, energy) {
+        const eyeSize = 12 + (energy / 10) * 8;
+        leftEye.setAttribute('rx', eyeSize.toString());
+        rightEye.setAttribute('rx', eyeSize.toString());
+        
+        if (mood === 'spooky') {
+            leftEye.setAttribute('cy', '115');
+            rightEye.setAttribute('cy', '115');
+        } else if (mood === 'excited') {
+            leftEye.setAttribute('cy', '125');
+            rightEye.setAttribute('cy', '125');
+        } else {
+            leftEye.setAttribute('cy', '120');
+            rightEye.setAttribute('cy', '120');
+        }
+    }
+
+    // Demo functions
+    function triggerMotionDetection() {
+        showMessage('👋 Motion detected! Hello there!');
+        
+        updateGhostState({
+            mood: 'excited',
+            animation_style: 'bouncy',
+            energy_level: 8,
+            interaction_mode: 'active'
+        });
+        
+        triggerEffect('glow');
+        startSpeaking();
+        
+        setTimeout(() => {
+            showMessage('Ready for conversation...');
+            stopSpeaking();
+        }, 3000);
+    }
+
+    function startConversation() {
+        showMessage('🎃 "Hello! What a wonderful costume!"');
+        
+        updateGhostState({
+            mood: 'friendly',
+            animation_style: 'gentle',
+            energy_level: 6
+        });
+        
+        startSpeaking();
+        
+        const responses = [
+            '👻 "Are you having fun trick-or-treating?"',
+            '🍭 "How much candy have you collected so far?"',
+            '🌙 "Do you like spooky stories?"',
+            '⭐ "What\'s your favorite part of Halloween?"'
+        ];
+        
+        let responseIndex = 0;
+        const conversationInterval = setInterval(() => {
+            if (responseIndex < responses.length) {
+                showMessage(responses[responseIndex]);
+                
+                // Update ghost based on conversation context
+                if (responses[responseIndex].includes('spooky')) {
+                    updateGhostState({ mood: 'spooky', animation_style: 'eerie' });
+                } else if (responses[responseIndex].includes('fun')) {
+                    updateGhostState({ mood: 'playful', animation_style: 'bouncy' });
+                }
+                
+                responseIndex++;
+            } else {
+                clearInterval(conversationInterval);
+                stopSpeaking();
+                ambientMode();
+            }
+        }, 4000);
+    }
+
+    function triggerEffect(effectType) {
+        if (effectType === 'sparkle') {
+            for (let i = 0; i < 15; i++) {
+                setTimeout(() => {
+                    const sparkle = document.createElement('div');
+                    sparkle.className = 'sparkle';
+                    sparkle.style.left = (Math.random() * window.innerWidth) + 'px';
+                    sparkle.style.top = (Math.random() * window.innerHeight) + 'px';
+                    effects.appendChild(sparkle);
+                    
+                    setTimeout(() => {
+                        sparkle.remove();
+                    }, 2000);
+                }, i * 100);
+            }
+        } else if (effectType === 'glow') {
+            const glowRing = document.createElement('div');
+            glowRing.className = 'glow-ring';
+            effects.appendChild(glowRing);
+            
+            setTimeout(() => {
+                glowRing.remove();
+            }, 2500);
+        }
+    }
+
+    function ambient

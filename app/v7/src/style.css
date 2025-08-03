@@ -1,0 +1,270 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+    --bg-color: #1a1a2e;
+    --ghost-color: white;
+    --shadow-color: rgba(26, 26, 46, 0.4);
+    --eye-color: #2c3e50;
+    --spooky-color: #9b59b6;
+    --spooky-glow: rgba(155, 89, 182, 0.7);
+    --font-family: 'Space Mono', monospace;
+    --text-color: #f0f0f0;
+    --panel-bg: rgba(0, 0, 0, 0.2);
+    --panel-border: rgba(255, 255, 255, 0.1);
+    --button-bg: rgba(255, 255, 255, 0.1);
+    --button-hover-bg: rgba(255, 255, 255, 0.2);
+    --button-active-bg: rgba(142, 68, 173, 0.5);
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
+
+.container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px 10px;
+}
+
+/* Ghost & State Wrapper */
+.ghost-wrapper {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.current-state {
+    position: absolute;
+    top: 0;
+    left: 10px;
+    background: var(--panel-bg);
+    padding: 8px 15px;
+    border-radius: 12px;
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(5px);
+    z-index: 10;
+    font-size: 14px;
+    text-align: left;
+}
+.current-state span { font-weight: bold; }
+
+.ghost-container {
+    position: relative;
+    animation: float 6s ease-in-out infinite;
+    cursor: pointer;
+}
+
+.ghost {
+    position: relative;
+    width: 130px;
+    height: 150px;
+    background: var(--ghost-color);
+    border-radius: 65px 65px 20px 20px;
+    transition: all 0.5s ease;
+}
+.ghost::after {
+    content: "";
+    position: absolute;
+    bottom: -15px;
+    left: 0;
+    width: 100%;
+    height: 30px;
+    background: 
+        radial-gradient(circle at 16.25px 0, transparent 12px, var(--ghost-color) 12.5px),
+        radial-gradient(circle at 48.75px 0, transparent 12px, var(--ghost-color) 12.5px),
+        radial-gradient(circle at 81.25px 0, transparent 12px, var(--ghost-color) 12.5px),
+        radial-gradient(circle at 113.75px 0, transparent 12px, var(--ghost-color) 12.5px);
+    background-size: 32.5px 15px;
+}
+
+.eyes {
+    position: absolute;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 25px;
+}
+
+.eye {
+    width: 15px;
+    height: 15px;
+    background: var(--eye-color);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    animation: blink 5s infinite;
+}
+@keyframes blink {
+    0%, 95%, 100% { transform: scaleY(1); }
+    97.5% { transform: scaleY(0.1); }
+}
+
+.mouth {
+    position: absolute;
+    top: 85px;
+    left: 50%;
+    width: 20px;
+    height: 10px;
+    border: 3px solid var(--eye-color);
+    border-radius: 0 0 10px 10px;
+    border-top: none;
+    transform: translateX(-50%);
+    transition: all 0.3s ease;
+}
+
+.shadow {
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 15px;
+    background: var(--shadow-color);
+    border-radius: 50%;
+    filter: blur(4px);
+    transition: all 0.5s ease;
+}
+
+/* State-based variations */
+.ghost.spooky-mode {
+    background: var(--spooky-color);
+    filter: drop-shadow(0 0 25px var(--spooky-glow));
+}
+.ghost.spooky-mode::after {
+    background: 
+        radial-gradient(circle at 16.25px 0, transparent 12px, var(--spooky-color) 12.5px),
+        radial-gradient(circle at 48.75px 0, transparent 12px, var(--spooky-color) 12.5px),
+        radial-gradient(circle at 81.25px 0, transparent 12px, var(--spooky-color) 12.5px),
+        radial-gradient(circle at 113.75px 0, transparent 12px, var(--spooky-color) 12.5px);
+    background-size: 32.5px 15px;
+}
+.spooky-mode .eye { background: white; box-shadow: 0 0 10px red; }
+.spooky-mode .mouth {
+    width: 25px;
+    height: 15px;
+    border-radius: 50%;
+    border: 4px solid var(--eye-color);
+    background: transparent;
+}
+
+/* Animations */
+@keyframes float {
+    0%, 100% { transform: translateY(-5px); }
+    50% { transform: translateY(5px); }
+}
+.ghost.jiggle { animation: jiggle-anim 0.5s; }
+@keyframes jiggle-anim {
+    0%, 100% { transform: rotate(0); }
+    25% { transform: skewX(-5deg) rotate(-2deg); }
+    75% { transform: skewX(5deg) rotate(2deg); }
+}
+
+/* On-Screen Controls */
+.on-screen-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 10px;
+    background: var(--panel-bg);
+    border-radius: 15px;
+    border: 1px solid var(--panel-border);
+}
+.control-group h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #aaa;
+    margin-bottom: 10px;
+    text-align: center;
+}
+.control-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+.control-btn {
+    background: var(--button-bg);
+    border: 1px solid var(--panel-border);
+    color: var(--text-color);
+    padding: 10px 5px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: var(--font-family);
+    font-size: 12px;
+    text-align: center;
+}
+.control-btn:active, .control-btn.active {
+    background: var(--button-active-bg);
+    transform: scale(0.95);
+}
+
+/* Other UI Elements (Modal, Settings Icon, etc.) */
+.settings-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 45px;
+    height: 45px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1001;
+    transition: transform 0.3s ease;
+}
+.settings-icon:hover { transform: rotate(90deg); }
+.settings-icon svg { width: 24px; height: 24px; }
+
+.modal-container {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0s 0.3s;
+}
+.modal-container.open { opacity: 1; visibility: visible; transition-delay: 0s; }
+.modal-content {
+    background-color: #2c3e50;
+    padding: 20px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 350px;
+}
+.modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--panel-border);
+    padding-bottom: 15px; margin-bottom: 20px;
+}
+.modal-header h2 { margin: 0; font-size: 20px; }
+.close-btn { font-size: 30px; cursor: pointer; }
+.control-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.slider { width: 60%; } /* Basic slider style */
+
+/* Shared Action/Effect classes */
+.chat-bubble, .sparkle { /* ... Add styles if needed */ }

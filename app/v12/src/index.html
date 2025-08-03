@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: linear-gradient(180deg, #0a0a2e 0%, #1a1a3e 100%);
+            font-family: Arial;
+        }
+        canvas { display: block; }
+        #info { 
+            position: absolute; 
+            top: 10px; 
+            left: 10px; 
+            color: #fff; 
+            opacity: 0.5;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">Click to enable sound</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.Fog(0x0a0a2e, 5, 20);
+        
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404080, 0.8);
+        scene.add(ambientLight);
+        
+        const moonLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        moonLight.position.set(5, 10, 5);
+        moonLight.castShadow = true;
+        scene.add(moonLight);
+
+        // Ghost construction
+        const ghost = new THREE.Group();
+        
+        // Create classic ghost shape
+        const ghostShape = new THREE.Shape();
+        ghostShape.moveTo(0, 1.5);
+        ghostShape.bezierCurveTo(1.2, 1.5, 1.2, 0, 1.2, -0.5);
+        ghostShape.lineTo(1.2, -1.5);
+        
+        // Wavy bottom with 3 curves
+        ghostShape.bezierCurveTo(1.2, -1.8, 0.8, -1.8, 0.8, -1.5);
+        ghostShape.bezierCurveTo(0.8, -1.8, 0.4, -1.8, 0.4, -1.5);
+        ghostShape.bezierCurveTo(0.4, -1.8, 0, -1.8, 0, -1.5);
+        ghostShape.bezierCurveTo(0, -1.8, -0.4, -1.8, -0.4, -1.5);
+        ghostShape.bezierCurveTo(-0.4, -1.8, -0.8, -1.8, -0.8, -1.5);
+        ghostShape.bezierCurveTo(-0.8, -1.8, -1.2, -1.8, -1.2, -1.5);
+        
+        ghostShape.lineTo(-1.2, -0.5);
+        ghostShape.bezierCurveTo(-1.2, 0, -1.2, 1.5, 0, 1.5);
+        
+        const extrudeSettings = {
+            depth: 0.8,
+            bevelEnabled: true,
+            bevelSegments: 8,
+            bevelSize: 0.1,
+            bevelThickness: 0.1
+        };
+        
+        const ghostGeometry = new THREE.ExtrudeGeometry(ghostShape, extrudeSettings);
+        ghostGeometry.center();
+        
+        // Ghost material with subsurface effect
+        const ghostMaterial = new THREE.MeshPhongMaterial({
+            color: 0xffffff,
+            emissive: 0x4444ff,
+            emissiveIntensity: 0.3,
+            transparent: true,
+            opacity: 0.9,
+            side: THREE.DoubleSide
+        });
+        
+        const ghostBody = new THREE.Mesh(ghostGeometry, ghostMaterial);
+        ghost.add(ghostBody);
+        
+        // Eyes container
+        const eyesGroup = new THREE.Group();
+        
+        // Eye whites
+        const eyeGeometry = new THREE.SphereGeometry(0.2, 32, 32);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        
+        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        leftEye.position.set(-0.35, 0.3, 0.5);
+        leftEye.scale.set(1, 1.3, 0.5);
+        
+        const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        rightEye.position.set(0.35, 0.3, 0.5);
+        rightEye.scale.set(1, 1.3, 0.5);
+        
+        // Eye shine
+        const shineGeometry = new THREE.SphereGeometry(0.05, 16, 16);
+        const shineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        
+        const leftShine = new THREE.Mesh(shineGeometry, shineMaterial);
+        leftShine.position.set(-0.32, 0.35, 0.6);
+        
+        const rightShine = new THREE.Mesh(shineGeometry, shineMaterial);
+        rightShine.position.set(0.38, 0.35, 0.6);
+        
+        eyesGroup.add(leftEye, rightEye, leftShine, rightShine);
+        ghost.add(eyesGroup);
+        
+        // Mouth
+        const mouthGroup = new THREE.Group();
+        const mouthShape = new THREE.Shape();
+        mouthShape.arc(0, 0, 0.3, 0, Math.PI, false);
+        
+        const mouthGeometry = new THREE.ShapeGeometry(mouthShape);
+        const mouthMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x000000,
+            side: THREE.DoubleSide
+        });
+        const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+        mouth.position.set(0, -0.2, 0.5);
+        mouthGroup.add(mouth);
+        ghost.add(mouthGroup);
+        
+        // Arms
+        const armGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+        const leftArm = new THREE.Mesh(armGeometry, ghostMaterial);
+        leftArm.position.set(-0.8, 0, 0);
+        leftArm.scale.set(1.5, 0.8, 0.8);
+        
+        const rightArm = new THREE.Mesh(armGeometry, ghostMaterial);
+        rightArm.position.set(0.8, 0, 0);
+        rightArm.scale.set(1.5, 0.8, 0.8);
+        
+        ghost.add(leftArm, rightArm);
+        
+        // Ghost glow
+        const glowLight = new THREE.PointLight(0x8888ff, 0.5, 3);
+        glowLight.position.set(0, 0, 0);
+        ghost.add(glowLight);
+        
+        scene.add(ghost);
+        camera.position.z = 8;
+        camera.position.y = 1;
+
+        // Particle system
+        const particleCount = 200;
+        const particleGeometry = new THREE.BufferGeometry();
+        const particlePositions = new Float32Array(particleCount * 3);
+        
+        for (let i = 0; i < particleCount * 3; i += 3) {
+            particlePositions[i] = (Math.random() - 0.5) * 20;
+            particlePositions[i + 1] = Math.random() * 10 - 2;
+            particlePositions[i + 2] = (Math.random() - 0.5) * 20;
+        }
+        
+        particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+        
+        const particleMaterial = new THREE.PointsMaterial({
+            color: 0xaaaaff,
+            size: 0.1,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending
+        });
+        
+        const particles = new THREE.Points(particleGeometry, particleMaterial);
+        scene.add(particles);
+
+        // Ghost state with home base concept
+        const state = {
+            homeBase: { x: 0, y: 1, z: 0 },
+            currentTarget: null,
+            emotion: 'happy',
+            activity: 'idle',
+            activityTimer: 0,
+            emotionTimer: 0,
+            soundTimer: 0,
+            blinkTimer: 0,
+            armWave: 0
+        };
+
+        // Audio system
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playGhostSound(type = 'ambient') {
+            const now = audioContext.currentTime;
+            
+            if (type === 'happy') {
+                // Ascending notes
+                [200, 250, 300, 350].forEach((freq, i) => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.frequency.value = freq;
+                    osc.type = 'sine';
+                    gain.gain.setValueAtTime(0, now + i * 0.1);
+                    gain.gain.linearRampToValueAtTime(0.05, now + i * 0.1 + 0.05);
+                    gain.gain.linearRampToValueAtTime(0, now + i * 0.1 + 0.2);
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    osc.start(now + i * 0.1);
+                    osc.stop(now + i * 0.1 + 0.2);
+                });
+            } else if (type === 'spooky') {
+                // Woooo sound
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.setValueAtTime(200, now + 0.5);
+                osc.frequency.setValueAtTime(100, now + 1);
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.1, now + 0.1);
+                gain.gain.setValueAtTime(0.1, now + 0.9);
+                gain.gain.linearRampToValueAtTime(0, now + 1);
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.start(now);
+                osc.stop(now + 1);
+            }
+        }
+
+        function setEmotion(emotion) {
+            state.emotion = emotion;
+            const shapes = {
+                happy: { 
+                    mouthScale: [1, 1, 1], 
+                    mouthRotation: 0,
+                    eyeScale: [1, 1.3, 0.5],
+                    color: 0x4444ff
+                },
+                excited: { 
+                    mouthScale: [1.5, 1.5, 1], 
+                    mouthRotation: 0,
+                    eyeScale: [1.2, 1.5, 0.5],
+                    color: 0xff44ff
+                },
+                sleepy: { 
+                    mouthScale: [0.5, 0.3, 1], 
+                    mouthRotation: 0,
+                    eyeScale: [1, 0.3, 0.5],
+                    color: 0x4444aa
+                },
+                surprised: { 
+                    mouthScale: [1, 1.5, 1], 
+                    mouthRotation: 0,
+                    eyeScale: [1.5, 1.5, 0.5],
+                    color: 0xff8844
+                },
+                mischievous: { 
+                    mouthScale: [1.2, 0.8, 1], 
+                    mouthRotation: 0.3,
+                    eyeScale: [0.8, 1, 0.5],
+                    color: 0x8844ff
+                }
+            };
+            
+            const config = shapes[emotion] || shapes.happy;
+            mouth.scale.set(...config.mouthScale);
+            mouth.rotation.z = config.mouthRotation;
+            leftEye.scale.set(...config.eyeScale);
+            rightEye.scale.set(...config.eyeScale);
+            ghostMaterial.emissive = new THREE.Color(config.color);
+            glowLight.color = new THREE.Color(config.color);
+        }
+
+        function setActivity(activity) {
+            state.activity = activity;
+            state.activityTimer = 0;
+            
+            switch(activity) {
+                case 'explore':
+                    // Pick a random point away from home
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = 3 + Math.random() * 3;
+                    state.currentTarget = {
+                        x: state.homeBase.x + Math.cos(angle) * distance,
+                        y: state.homeBase.y + (Math.random() - 0.5) * 2,
+                        z: state.homeBase.z + Math.sin(angle) * distance
+                    };
+                    break;
+                case 'return':
+                    // Head back home
+                    state.currentTarget = {...state.homeBase};
+                    break;
+                case 'dance':
+                    // Stay in place but move rhythmically
+                    state.currentTarget = null;
+                    setEmotion('excited');
+                    playGhostSound('happy');
+                    break;
+                case 'hover':
+                    // Gentle floating in place
+                    state.currentTarget = null;
+                    break;
+            }
+        }
+
+        // Animation loop
+        const clock = new THREE.Clock();
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const time = clock.getElapsedTime();
+            const delta = clock.getDelta();
+            
+            // Activity management
+            state.activityTimer += delta;
+            
+            if (state.activity === 'idle' && state.activityTimer > 2) {
+                // Choose new activity
+                const activities = ['explore', 'dance', 'hover'];
+                setActivity(activities[Math.floor(Math.random() * activities.length)]);
+            } else if (state.activity === 'explore' && state.activityTimer > 5) {
+                setActivity('return');
+            } else if (state.activity === 'return' && 
+                      Math.abs(ghost.position.x - state.homeBase.x) < 0.5 &&
+                      Math.abs(ghost.position.y - state.homeBase.y) < 0.5) {
+                setActivity('idle');
+            } else if ((state.activity === 'dance' || state.activity === 'hover') && 
+                      state.activityTimer > 3 + Math.random() * 2) {
+                setActivity('idle');
+            }
+            
+            // Movement based on activity
+            if (state.currentTarget) {
+                // Move towards target
+                ghost.position.x += (state.currentTarget.x - ghost.position.x) * 0.02;
+                ghost.position.y += (state.currentTarget.y - ghost.position.y) * 0.02;
+                ghost.position.z += (state.currentTarget.z - ghost.position.z) * 0.02;
+                
+                // Face direction of movement
+                const dx = state.currentTarget.x - ghost.position.x;
+                const dz = state.currentTarget.z - ghost.position.z;
+                if (Math.abs(dx) > 0.1 || Math.abs(dz) > 0.1) {
+                    ghost.rotation.y = Math.atan2(dx, dz);
+                }
+            }
+            
+            // Activity-specific animations
+            if (state.activity === 'dance') {
+                ghost.position.y = state.homeBase.y + Math.sin(time * 8) * 0.3;
+                ghost.rotation.y = time * 2;
+                state.armWave = Math.sin(time * 10) * 0.5;
+            } else if (state.activity === 'hover') {
+                ghost.position.y += Math.sin(time * 2) * 0.005;
+            } else {
+                // Normal floating
+                ghost.position.y += Math.sin(time * 1.5) * 0.003;
+                state.armWave = Math.sin(time * 3) * 0.2;
+            }
+            
+            // Arm waving
+            leftArm.rotation.z = -0.5 + state.armWave;
+            rightArm.rotation.z = 0.5 - state.armWave;
+            
+            // Bottom edge wave
+            ghostBody.rotation.z = Math.sin(time * 2) * 0.05;
+            
+            // Blinking
+            state.blinkTimer += delta;
+            if (state.blinkTimer > 3 + Math.random() * 2) {
+                leftEye.scale.y = 0.1;
+                rightEye.scale.y = 0.1;
+                setTimeout(() => {
+                    leftEye.scale.y = 1.3;
+                    rightEye.scale.y = 1.3;
+                }, 150);
+                state.blinkTimer = 0;
+            }
+            
+            // Emotion changes
+            state.emotionTimer += delta;
+            if (state.emotionTimer > 5 + Math.random() * 5) {
+                const emotions = ['happy', 'excited', 'sleepy', 'surprised', 'mischievous'];
+                setEmotion(emotions[Math.floor(Math.random() * emotions.length)]);
+                state.emotionTimer = 0;
+            }
+            
+            // Sound effects
+            state.soundTimer += delta;
+            if (state.soundTimer > 8 + Math.random() * 4) {
+                playGhostSound(Math.random() > 0.5 ? 'happy' : 'spooky');
+                state.soundTimer = 0;
+            }
+            
+            // Update particles
+            const positions = particles.geometry.attributes.position.array;
+            for (let i = 0; i < particleCount * 3; i += 3) {
+                positions[i + 1] -= 0.01;
+                if (positions[i + 1] < -2) {
+                    positions[i + 1] = 8;
+                    positions[i] = (Math.random() - 0.5) * 20;
+                    positions[i + 2] = (Math.random() - 0.5) * 20;
+                }
+            }
+            particles.geometry.attributes.position.needsUpdate = true;
+            
+            renderer.render(scene, camera);
+        }
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Audio init
+        document.addEventListener('click', () => {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            document.getElementById('info').style.display = 'none';
+        }, { once: true });
+
+        animate();
+    </script>
+</body>
+</html>

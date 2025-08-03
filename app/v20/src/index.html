@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: linear-gradient(180deg, #1a0a2e 0%, #2a1a3e 100%);
+            font-family: 'Arial', sans-serif;
+        }
+        canvas { display: block; }
+        #info { 
+            position: absolute; 
+            top: 10px; 
+            left: 10px; 
+            color: #fff; 
+            opacity: 0.5;
+            font-size: 12px;
+            z-index: 100;
+        }
+        #speechBubble {
+            position: absolute;
+            background: #ff6b35;
+            border-radius: 20px;
+            padding: 15px 20px;
+            font-size: 18px;
+            color: #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            display: none;
+            max-width: 250px;
+            text-align: center;
+            animation: bounce 0.3s ease-out;
+            font-weight: bold;
+        }
+        #speechBubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid #ff6b35;
+        }
+        @keyframes bounce {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        #debug {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: #fff;
+            font-family: monospace;
+            font-size: 11px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">Click to enable sound</div>
+    <div id="speechBubble"></div>
+    <div id="debug"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.Fog(0x1a0a2e, 5, 20);
+        
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404060, 0.4);
+        scene.add(ambientLight);
+        
+        const moonLight = new THREE.DirectionalLight(0x8888ff, 0.5);
+        moonLight.position.set(5, 10, 5);
+        moonLight.castShadow = true;
+        scene.add(moonLight);
+
+        // Jack-o'-lantern group
+        const jack = new THREE.Group();
+        
+        // Pumpkin body
+        const pumpkinGeometry = new THREE.SphereGeometry(1, 32, 32);
+        // Modify vertices to create pumpkin shape
+        const positions = pumpkinGeometry.attributes.position;
+        for (let i = 0; i < positions.count; i++) {
+            const x = positions.getX(i);
+            const y = positions.getY(i);
+            const z = positions.getZ(i);
+            
+            // Flatten top and bottom
+            let yScale = 0.8;
+            // Add ridges
+            const angle = Math.atan2(x, z);
+            const ridgeScale = 1 + Math.sin(angle * 8) * 0.05;
+            
+            positions.setX(i, x * ridgeScale);
+            positions.setY(i, y * yScale);
+            positions.setZ(i, z * ridgeScale);
+        }
+        pumpkinGeometry.computeVertexNormals();
+        
+        const pumpkinMaterial = new THREE.MeshPhongMaterial({
+            color: 0xff6b35,
+            emissive: 0x441100,
+            emissiveIntensity: 0.2,
+            shininess: 30
+        });
+        
+        const pumpkinBody = new THREE.Mesh(pumpkinGeometry, pumpkinMaterial);
+        pumpkinBody.castShadow = true;
+        pumpkinBody.receiveShadow = true;
+        jack.add(pumpkinBody);
+        
+        // Stem
+        const stemGeometry = new THREE.CylinderGeometry(0.08, 0.12, 0.3, 8);
+        const stemMaterial = new THREE.MeshPhongMaterial({
+            color: 0x2d5016,
+            emissive: 0x1a2f0a,
+            emissiveIntensity: 0.1
+        });
+        const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+        stem.position.y = 0.9;
+        stem.rotation.z = 0.1;
+        jack.add(stem);
+        
+        // Face group
+        const faceGroup = new THREE.Group();
+        
+        // Carved face material (glowing)
+        const carveMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffaa00,
+            emissive: 0xffaa00,
+            side: THREE.DoubleSide
+        });
+        
+        // Left eye (triangle)
+        const leftEyeShape = new THREE.Shape();
+        leftEyeShape.moveTo(0, 0.15);
+        leftEyeShape.lineTo(-0.15, -0.15);
+        leftEyeShape.lineTo(0.15, -0.15);
+        leftEyeShape.closePath();
+        
+        const leftEyeGeometry = new THREE.ShapeGeometry(leftEyeShape);
+        const leftEye = new THREE.Mesh(leftEyeGeometry, carveMaterial);
+        leftEye.position.set(-0.3, 0.3, 0.9);
+        faceGroup.add(leftEye);
+        
+        // Right eye (triangle)
+        const rightEye = leftEye.clone();
+        rightEye.position.set(0.3, 0.3, 0.9);
+        faceGroup.add(rightEye);
+        
+        // Nose (small triangle)
+        const noseShape = new THREE.Shape();
+        noseShape.moveTo(0, 0.1);
+        noseShape.lineTo(-0.08, -0.08);
+        noseShape.lineTo(0.08, -0.08);
+        noseShape.closePath();
+        
+        const noseGeometry = new THREE.ShapeGeometry(noseShape);
+        const nose = new THREE.Mesh(noseGeometry, carveMaterial);
+        nose.position.set(0, 0, 0.9);
+        faceGroup.add(nose);
+        
+        // Mouth (jagged grin)
+        const mouthShape = new THREE.Shape();
+        mouthShape.moveTo(-0.5, 0);
+        mouthShape.lineTo(-0.4, -0.15);
+        mouthShape.lineTo(-0.3, 0);
+        mouthShape.lineTo(-0.2, -0.2);
+        mouthShape.lineTo(-0.1, 0);
+        mouthShape.lineTo(0, -0.15);
+        mouthShape.lineTo(0.1, 0);
+        mouthShape.lineTo(0.2, -0.2);
+        mouthShape.lineTo(0.3, 0);
+        mouthShape.lineTo(0.4, -0.15);
+        mouthShape.lineTo(0.5, 0);
+        mouthShape.lineTo(0.4, 0.1);
+        mouthShape.lineTo(-0.4, 0.1);
+        mouthShape.closePath();
+        
+        const mouthGeometry = new THREE.ShapeGeometry(mouthShape);
+        const mouth = new THREE.Mesh(mouthGeometry, carveMaterial);
+        mouth.position.set(0, -0.3, 0.9);
+        faceGroup.add(mouth);
+        
+        jack.add(faceGroup);
+        
+        // Inner glow light
+        const innerLight = new THREE.PointLight(0xffaa00, 1, 3);
+        innerLight.position.set(0, 0, 0);
+        jack.add(innerLight);
+        
+        // Flicker effect for inner light
+        const flickerLight = () => {
+            innerLight.intensity = 0.8 + Math.random() * 0.4;
+        };
+        
+        scene.add(jack);
+        jack.position.set(0, 0.8, 0);
+        
+        // Camera
+        camera.position.set(0, 2, 10);
+        camera.lookAt(0, 1, 0);
+
+        // Ground
+        const groundGeometry = new THREE.PlaneGeometry(50, 50);
+        const groundMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0x1a1a2e,
+            emissive: 0x0a0a1e,
+            emissiveIntensity: 0.1
+        });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -0.5;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // Falling leaves particles
+        const leafCount = 100;
+        const leafGeometry = new THREE.BufferGeometry();
+        const leafPositions = new Float32Array(leafCount * 3);
+        const leafColors = new Float32Array(leafCount * 3);
+        
+        for (let i = 0; i < leafCount * 3; i += 3) {
+            leafPositions[i] = (Math.random() - 0.5) * 20;
+            leafPositions[i + 1] = Math.random() * 10;
+            leafPositions[i + 2] = (Math.random() - 0.5) * 20;
+            
+            const color = Math.random() > 0.5 ? [1, 0.4, 0] : [0.8, 0.2, 0];
+            leafColors[i] = color[0];
+            leafColors[i + 1] = color[1];
+            leafColors[i + 2] = color[2];
+        }
+        
+        leafGeometry.setAttribute('position', new THREE.BufferAttribute(leafPositions, 3));
+        leafGeometry.setAttribute('color', new THREE.BufferAttribute(leafColors, 3));
+        
+        const leafMaterial = new THREE.PointsMaterial({
+            size: 0.2,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8
+        });
+        const leaves = new THREE.Points(leafGeometry, leafMaterial);
+        scene.add(leaves);
+
+        // Speech bubble
+        const speechBubble = document.getElementById('speechBubble');
+        
+        // Jack's phrases
+        const phrases = {
+            greeting: ["BOO!", "Happy Halloween!", "Welcome, mortal!", "Trick or treat!", "Mwahahaha!"],
+            idle: ["*crackles with fire*", "Such a spooky night...", "I love October!", "*grins wickedly*"],
+            noticed: ["I see you there!", "Don't be scared!", "Come closer...", "Peek-a-boo!", "Found you!"],
+            performing: ["Watch me glow!", "Check this out!", "Spooky dance time!", "Let's party!", "Boo-gie time!"],
+            mischievous: ["Hehehe...", "I've got a trick for you!", "Want some candy?", "Let's scare someone!"],
+            exploring: ["Let's roll!", "Adventure awaits!", "Where to haunt next?", "Rolling along!"],
+            returning: ["Back to my spot!", "Home sweet patch!", "That was fun!", "Time to rest"]
+        };
+        
+        function speak(category) {
+            const text = phrases[category][Math.floor(Math.random() * phrases[category].length)];
+            
+            const vector = new THREE.Vector3();
+            jack.localToWorld(vector.set(0, 2, 0));
+            vector.project(camera);
+            
+            const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
+            
+            speechBubble.style.left = x + 'px';
+            speechBubble.style.top = (y - 100) + 'px';
+            speechBubble.style.transform = 'translate(-50%, 0)';
+            speechBubble.textContent = text;
+            speechBubble.style.display = 'block';
+            
+            setTimeout(() => {
+                speechBubble.style.display = 'none';
+            }, 2000 + text.length * 50);
+        }
+
+        // State
+        const state = {
+            homeBase: { x: 0, y: 0.8, z: 0 },
+            targetPos: { x: 0, y: 0.8, z: 0 },
+            activity: 'idle',
+            emotion: 'happy',
+            awareness: 'casual',
+            timers: {
+                activity: 0,
+                emotion: 0,
+                sound: 0,
+                flicker: 0,
+                awareness: 0,
+                speak: 0
+            },
+            isMoving: false,
+            rotationSpeed: 0
+        };
+
+        // Audio
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            const now = audioContext.currentTime;
+            
+            switch(type) {
+                case 'cackle':
+                    // Evil laugh
+                    for(let i = 0; i < 8; i++) {
+                        const osc = audioContext.createOscillator();
+                        const gain = audioContext.createGain();
+                        osc.frequency.value = 200 + Math.random() * 100 + i * 30;
+                        gain.gain.setValueAtTime(0, now + i * 0.1);
+                        gain.gain.linearRampToValueAtTime(0.1, now + i * 0.1 + 0.05);
+                        gain.gain.linearRampToValueAtTime(0, now + i * 0.1 + 0.1);
+                        osc.connect(gain);
+                        gain.connect(audioContext.destination);
+                        osc.start(now + i * 0.1);
+                        osc.stop(now + i * 0.1 + 0.1);
+                    }
+                    break;
+                case 'boo':
+                    const boo = audioContext.createOscillator();
+                    const booGain = audioContext.createGain();
+                    boo.frequency.setValueAtTime(150, now);
+                    boo.frequency.exponentialRampToValueAtTime(80, now + 0.8);
+                    booGain.gain.setValueAtTime(0.3, now);
+                    booGain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+                    boo.connect(booGain);
+                    booGain.connect(audioContext.destination);
+                    boo.start(now);
+                    boo.stop(now + 0.8);
+                    break;
+            }
+        }
+
+        function setActivity(newActivity) {
+            state.activity = newActivity;
+            state.timers.activity = 0;
+            
+            switch(newActivity) {
+                case 'roll':
+                    // Roll to new position
+                    state.targetPos.x = (Math.random() - 0.5) * 8;
+                    state.targetPos.z = (Math.random() - 0.5) * 6;
+                    state.isMoving = true;
+                    state.rotationSpeed = 0.05;
+                    speak('exploring');
+                    break;
+                case 'spin':
+                    state.isMoving = false;
+                    state.rotationSpeed = 0.1;
+                    speak('performing');
+                    playSound('cackle');
+                    setEmotion('excited');
+                    break;
+                case 'bounce':
+                    state.isMoving = false;
+                    state.rotationSpeed = 0;
+                    speak('performing');
+                    break;
+                case 'return':
+                    state.targetPos.x = state.homeBase.x;
+                    state.targetPos.z = state.homeBase.z;
+                    state.isMoving = true;
+                    state.rotationSpeed = 0.05;
+                    speak('returning');
+                    break;
+                case 'idle':
+                    state.isMoving = false;
+                    state.rotationSpeed = 0;
+                    if (Math.random() > 0.7) speak('idle');
+                    break;
+            }
+        }
+
+        function setEmotion(emotion) {
+            state.emotion = emotion;
+            
+            switch(emotion) {
+                case 'happy':
+                    innerLight.color.setHex(0xffaa00);
+                    pumpkinMaterial.emissive.setHex(0x441100);
+                    break;
+                case 'excited':
+                    innerLight.color.setHex(0xffff00);
+                    pumpkinMaterial.emissive.setHex(0x662200);
+                    break;
+                case 'spooky':
+                    innerLight.color.setHex(0xff0000);
+                    pumpkinMaterial.emissive.setHex(0x660000);
+                    break;
+                case 'mischievous':
+                    innerLight.color.setHex(0x00ff00);
+                    pumpkinMaterial.emissive.setHex(0x004400);
+                    break;
+            }
+        }
+
+        // Animation loop
+        const clock = new THREE.Clock();
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+            
+            // Update timers
+            for(let key in state.timers) {
+                state.timers[key] += delta;
+            }
+            
+            // Flicker candle
+            if (state.timers.flicker > 0.1) {
+                flickerLight();
+                state.timers.flicker = 0;
+            }
+            
+            // Viewer awareness
+            if (state.awareness === 'casual' && Math.random() < 0.003) {
+                state.awareness = 'noticed';
+                state.timers.awareness = 0;
+                setEmotion('spooky');
+                speak('noticed');
+                playSound('boo');
+            } else if (state.awareness === 'noticed' && state.timers.awareness > 2) {
+                if (Math.random() > 0.5) {
+                    state.awareness = 'performing';
+                    setActivity('spin');
+                } else {
+                    state.awareness = 'mischievous';
+                    speak('mischievous');
+                    setEmotion('mischievous');
+                }
+            } else if ((state.awareness === 'performing' || state.awareness === 'mischievous') && 
+                      state.timers.awareness > 6) {
+                state.awareness = 'casual';
+                state.timers.awareness = 0;
+            }
+            
+            // Activity state machine
+            if (state.activity === 'idle' && state.timers.activity > 3) {
+                const activities = ['roll', 'bounce', 'spin'];
+                setActivity(activities[Math.floor(Math.random() * activities.length)]);
+            } else if (state.activity === 'roll' && !state.isMoving) {
+                if (state.timers.activity > 3) {
+                    setActivity('return');
+                }
+            } else if (state.activity === 'return' && !state.isMoving) {
+                setActivity('idle');
+            } else if ((state.activity === 'spin' || state.activity === 'bounce') && 
+                      state.timers.activity > 4) {
+                setActivity('idle');
+            }
+            
+            // Movement
+            if (state.isMoving) {
+                const dx = state.targetPos.x - jack.position.x;
+                const dz = state.targetPos.z - jack.position.z;
+                const distance = Math.sqrt(dx * dx + dz * dz);
+                
+                if (distance > 0.1) {
+                    jack.position.x += dx * 0.03;
+                    jack.position.z += dz * 0.03;
+                    
+                    // Roll animation
+                    const rollAxis = new THREE.Vector3(-dz, 0, dx).normalize();
+                    jack.rotateOnWorldAxis(rollAxis, state.rotationSpeed);
+                } else {
+                    state.isMoving = false;
+                }
+            }
+            
+            // Bouncing animation
+            if (state.activity === 'bounce') {
+                jack.position.y = state.homeBase.y + Math.abs(Math.sin(time * 5)) * 0.5;
+            } else {
+                // Gentle hover
+                jack.position.y = state.homeBase.y + Math.sin(time * 2) * 0.05;
+            }
+            
+            // Spinning
+            if (state.activity === 'spin') {
+                jack.rotation.y += state.rotationSpeed;
+            }
+            
+            // Face wobble
+            faceGroup.rotation.z = Math.sin(time * 3) * 0.02;
+            
+            // Stem wobble
+            stem.rotation.z = 0.1 + Math.sin(time * 2) * 0.05;
+            
+            // Emotion changes
+            if (state.timers.emotion > 8 && state.awareness === 'casual') {
+                const emotions = ['happy', 'excited', 'spooky', 'mischievous'];
+                setEmotion(emotions[Math.floor(Math.random() * emotions.length)]);
+                state.timers.emotion = 0;
+            }
+            
+            // Random speaking
+            if (state.timers.speak > 12 && Math.random() < 0.3) {
+                if (state.awareness === 'casual' && !speechBubble.style.display) {
+                    speak('idle');
+                }
+                state.timers.speak = 0;
+            }
+            
+            // Update leaves
+            const lPositions = leaves.geometry.attributes.position.array;
+            for (let i = 0; i < leafCount * 3; i += 3) {
+                lPositions[i + 1] -= 0.01;
+                lPositions[i] += Math.sin(time + i) * 0.002;
+                
+                if (lPositions[i + 1] < -0.5) {
+                    lPositions[i + 1] = 10;
+                    lPositions[i] = (Math.random() - 0.5) * 20;
+                    lPositions[i + 2] = (Math.random() - 0.5) * 20;
+                }
+            }
+            leaves.geometry.attributes.position.needsUpdate = true;
+            
+            // Sound timer
+            if (state.timers.sound > 10 + Math.random() * 5) {
+                playSound(state.awareness === 'performing' ? 'cackle' : 'boo');
+                state.timers.sound = 0;
+            }
+            
+            // Debug
+            document.getElementById('debug').innerHTML = 
+                `Activity: ${state.activity} | Emotion: ${state.emotion} | Awareness: ${state.awareness}`;
+            
+            renderer.render(scene, camera);
+        }
+
+        // Greeting
+        setTimeout(() => {
+            speak('greeting');
+            playSound('cackle');
+        }, 1000);
+
+        // Start
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        document.addEventListener('click', () => {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            document.getElementById('info').style.display = 'none';
+        }, { once: true });
+
+        animate();
+    </script>
+</body>
+</html>

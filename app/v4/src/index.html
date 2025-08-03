@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Bogart - Interactive Ghost</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: white;
+            overflow: hidden;
+        }
+
+        .container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .settings-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .settings-icon:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(90deg);
+        }
+
+        .current-state {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            min-width: 150px;
+        }
+
+        .current-state h3 {
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .state-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .ghost-container {
+            position: relative;
+            margin: 50px 0;
+        }
+
+        .ghost {
+            width: 150px;
+            height: 200px;
+            background: white;
+            border-radius: 75px 75px 0 0;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+        }
+
+        .ghost.bouncy {
+            animation: bounce 0.8s ease-in-out infinite alternate;
+        }
+
+        .ghost.dramatic {
+            animation: dramatic 2s ease-in-out infinite;
+        }
+
+        .ghost.eerie {
+            animation: eerie 3s ease-in-out infinite;
+        }
+
+        .ghost.gentle {
+            animation: gentle 4s ease-in-out infinite;
+        }
+
+        .ghost.spooky-mood {
+            background: #e6e6fa;
+            filter: drop-shadow(0 0 25px rgba(138, 43, 226, 0.5));
+        }
+
+        .ghost.excited-mood {
+            animation: excited 0.5s ease-in-out infinite alternate;
+        }
+
+        .ghost.mysterious-mood {
+            opacity: 0.8;
+            filter: drop-shadow(0 0 30px rgba(75, 0, 130, 0.6));
+        }
+
+        .ghost::before {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 100%;
+            height: 20px;
+            background: white;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .ghost::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            width: 100%;
+            height: 20px;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                transparent 10%, 
+                white 10%, 
+                white 20%, 
+                transparent 20%, 
+                transparent 30%, 
+                white 30%, 
+                white 40%, 
+                transparent 40%, 
+                transparent 50%, 
+                white 50%, 
+                white 60%, 
+                transparent 60%, 
+                transparent 70%, 
+                white 70%, 
+                white 80%, 
+                transparent 80%, 
+                transparent 90%, 
+                white 90%, 
+                white 100%);
+        }
+
+        .eyes {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+        }
+
+        .eye {
+            width: 15px;
+            height: 20px;
+            background: #333;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .eye.excited {
+            height: 25px;
+            animation: blink 1s ease-in-out infinite;
+        }
+
+        .eye.sleepy {
+            height: 8px;
+            border-radius: 8px;
+        }
+
+        .mouth {
+            position: absolute;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 15px;
+            background: #333;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .mouth.happy {
+            width: 20px;
+            height: 10px;
+            border-radius: 0 0 20px 20px;
+            background: #333;
+        }
+
+        .mouth.surprised {
+            width: 15px;
+            height: 20px;
+            border-radius: 50%;
+        }
+
+        .glow-effect {
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            right: -20px;
+            bottom: -20px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: glow 2s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+
+        .sparkles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            animation: sparkle 1.5s ease-in-out infinite;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            margin-top: 30px;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .control-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .audio-controls {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            margin-top: 20px;
+        }
+
+        .audio-controls h4 {
+            margin-bottom: 10px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chat-bubble {
+            position: absolute;
+            top: -80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .chat-bubble.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-10px);
+        }
+
+        .chat-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid rgba(0, 0, 0, 0.8);
+        }
+
+        /* Animations */
+        @keyframes bounce {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-20px); }
+        }
+
+        @keyframes dramatic {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(-5deg); }
+            75% { transform: scale(0.9) rotate(5deg); }
+        }
+
+        @keyframes eerie {
+            0%, 100% { transform: translateX(0); filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3)); }
+            25% { transform: translateX(-10px); filter: drop-shadow(0 0 30px rgba(138, 43, 226, 0.5)); }
+            75% { transform: translateX(10px); filter: drop-shadow(0 0 25px rgba(75, 0, 130, 0.4)); }
+        }
+
+        @keyframes gentle {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-5px) scale(1.02); }
+        }
+
+        @keyframes excited {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(-10px) scale(1.05); }
+        }
+
+        @keyframes glow {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.7; }
+        }
+
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes blink {
+            0%, 90% { transform: scaleY(1); }
+            95% { transform: scaleY(0.1); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                position: relative;
+                top: 10px;
+                margin-bottom: 20px;
+            }
+            
+            .current-state {
+                position: absolute;
+                top: 60px;
+                right: 20px;
+                font-size: 12px;
+                padding: 10px;
+            }
+            
+            .control-row {
+                gap: 10px;
+            }
+            
+            .control-btn {
+                padding: 10px 15px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="settings-icon">⚙️</div>
+            <div class="current-state">
+                <h3>Current State</h3>
+                <div class="state-item">
+                    <span>Mood:</span>
+                    <span id="current-mood">friendly</span>
+                </div>
+                <div class="state-item">
+                    <span>Energy:</span>
+                    <span id="current-energy">5</span>
+                </div>
+                <div class="state-item">
+                    <span>Mode:</span>
+                    <span id="current-mode">ambient</span>
+                </div>
+                <div class="state-item">
+                    <span>Voice:</span>
+                    <span id="current-voice">warm</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="ghost-container">
+            <div class="ghost" id="ghost">
+                <div class="eyes">
+                    <div class="eye" id="left-eye"></div>
+                    <div class="eye" id="right-eye"></div>
+                </div>
+                <div class="mouth" id="mouth"></div>
+                <div class="glow-effect" id="glow" style="display: none;"></div>
+                <div class="sparkles" id="sparkles"></div>
+                <div class="chat-bubble" id="chat-bubble">Hello there! 👻</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-row">
+                <button class="control-btn" id="motion-btn">🚶 Motion</button>
+                <button class="control-btn" id="chat-btn">💬 Chat</button>
+                <button class="control-btn" id="sparkle-btn">✨ Sparkle</button>
+                <button class="control-btn" id="glow-btn">🌟 Glow</button>
+            </div>
+            
+            <div class="audio-controls">
+                <h4>🔊 Audio:</h4>
+                <div class="control-row">
+                    <button class="control-btn" id="whispers-btn">Whispers</button>
+                    <button class="control-btn" id="wind-btn">Wind</button>
+                    <button class="control-btn" id="hello-btn">Hello</button>
+                    <button class="control-btn" id="boo-btn">Boo!</button>
+                    <button class="control-btn" id="stop-btn">Stop</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let gameState = {
+            mood: 'friendly',
+            energy: 5,
+            mode: 'ambient',
+            voice: 'warm',
+            animationStyle: 'gentle',
+            interactionMode: 'curious',
+            isGlowing: false,
+            isSparkeling: false,
+            currentAnimation: null,
+            currentAudio: null
+        };
+
+        // DOM elements
+        const ghost = document.getElementById('ghost');
+        const leftEye = document.getElementById('left-eye');
+        const rightEye = document.getElementById('right-eye');
+        const mouth = document.getElementById('mouth');
+        const glow = document.getElementById('glow');
+        const sparkles = document.getElementById('sparkles');
+        const chatBubble = document.getElementById('chat-bubble');
+
+        // State display elements
+        const currentMood = document.getElementById('current-mood');
+        const currentEnergy = document.getElementById('current-energy');
+        const currentMode = document.getElementById('current-mode');
+        const currentVoice = document.getElementById('current-voice');
+
+        // Control buttons
+        const motionBtn = document.getElementById('motion-btn');
+        const chatBtn = document.getElementById('chat-btn');
+        const sparkleBtn = document.getElementById('sparkle-btn');
+        const glowBtn = document.getElementById('glow-btn');
+        const whispersBtn = document.getElementById('whispers-btn');
+        const windBtn = document.getElementById('wind-btn');
+        const helloBtn = document.getElementById('hello-btn');
+        const booBtn = document.getElementById('boo-btn');
+        const stopBtn = document.getElementById('stop-btn');
+
+        // Chat messages by mood
+        const chatMessages = {
+            friendly: ["Hello there! 👻", "Nice to meet you!", "Having a good day?", "Want to be friends?"],
+            spooky: ["Boo! 👻", "I'm watching you...", "Welcome to my realm", "Fear me... just kidding!"],
+            playful: ["Let's play! 🎮", "Catch me if you can!", "This is fun!", "Wanna dance?"],
+            excited: ["WOW! This is amazing!", "I'm so happy!", "Let's party! 🎉", "Energy overload!"],
+            mysterious: ["I know secrets...", "The shadows tell tales", "Mystery surrounds us", "What lies beyond?"]
+        };
+
+        // Audio context for sound generation
+        let audioContext;
+        let currentOscillator;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playTone(frequency, duration, type = 'sine') {
+            initAudio();
+            
+            if (currentOscillator) {
+                currentOscillator.stop();
+            }
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            oscillator.type = type;
+            
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+            
+            currentOscillator = oscillator;
+        }
+
+        function stopAudio() {
+            if (currentOscillator) {
+                currentOscillator.stop();
+                currentOscillator = null;
+            }
+        }
+
+        // Update ghost appearance based on state
+        function updateGhostAppearance() {
+            // Clear previous classes
+            ghost.className = 'ghost';
+            leftEye.className = 'eye';
+            rightEye.className = 'eye';
+            mouth.className = 'mouth';
+
+            // Apply mood styling
+            if (gameState.mood !== 'friendly') {
+                ghost.classList.add(`${gameState.mood}-mood`);
+            }
+
+            // Apply animation style
+            if (gameState.animationStyle && gameState.mode !== 'ambient') {
+                ghost.classList.add(gameState.animationStyle);
+            }
+
+            // Apply energy level effects
+            if (gameState.energy > 7) {
+                leftEye.classList.add('excited');
+                rightEye.classList.add('excited');
+                mouth.classList.add('happy');
+            } else if (gameState.energy < 3) {
+                leftEye.classList.add('sleepy');
+                rightEye.classList.add('sleepy');
+            } else if (gameState.mood === 'excited') {
+                mouth.classList.add('surprised');
+            }
+
+            // Update state display
+            currentMood.textContent = gameState.mood;
+            currentEnergy.textContent = gameState.energy;
+            currentMode.textContent = gameState.mode;
+            currentVoice.textContent = gameState.voice;
+        }
+
+        // Create sparkle effects
+        function createSparkles() {
+            sparkles.innerHTML = '';
+            if (!gameState.isSparkeling) return;
+
+            for (let i = 0; i < 8; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.style.left = Math.random() * 100 + '%';
+                sparkle.style.top = Math.random() * 100 + '%';
+                sparkle.style.animationDelay = Math.random() * 1.5 + 's';
+                sparkles.appendChild(sparkle);
+            }
+        }
+
+        // Show chat message
+        function showChatMessage() {
+            const messages = chatMessages[gameState.mood] || chatMessages.friendly;
+            const message = messages[Math.floor(Math.random() * messages.length)];
+            
+            chatBubble.textContent = message;
+            chatBubble.classList.add('show');
+            
+            setTimeout(() => {
+                chatBubble.classList.remove('show');
+            }, 3000);
+        }
+
+        // Change mood randomly
+        function changeMood() {
+            const moods = ['friendly', 'spooky', 'playful', 'excited', 'mysterious'];
+            const newMood = moods[Math.floor(Math.random() * moods.length)];
+            gameState.mood = newMood;
+            
+            // Adjust energy based on mood
+            if (newMood === 'excited') {
+                gameState.energy = Math.min(10, gameState.energy + 2);
+            } else if (newMood === 'mysterious') {
+                gameState.energy = Math.max(1, gameState.energy - 1);
+            }
+            
+            updateGhostAppearance();
+        }
+
+        // Event listeners
+        motionBtn.addEventListener('click', () => {
+            const animations = ['gentle', 'dramatic', 'bouncy', 'eerie'];
+            gameState.animationStyle = animations[Math.floor(Math.random() * animations.length)];
+            gameState.mode = gameState.mode === 'ambient' ? 'active' : 'ambient';
+            
+            motionBtn.classList.toggle('active');
+            updateGhostAppearance();
+        });
+
+        chatBtn.addEventListener('click', () => {
+            showChatMessage();
+            changeMood();
+            chatBtn.classList.add('active');
+            setTimeout(() => chatBtn.classList.remove('active'), 1000);
+        });
+
+        sparkleBtn.addEventListener('click', () => {
+            gameState.isSparkeling = !gameState.isSparkeling;
+            sparkleBtn.classList.toggle('active');
+            createSparkles();
+        });
+
+        glowBtn.addEventListener('click', () => {
+            gameState.isGlowing = !gameState.isGlowing;
+            glow.style.display = gameState.isGlowing ? 'block' : 'none';
+            glowBtn.classList.toggle('active');
+        });
+
+        // Audio button events
+        whispersBtn.addEventListener('click', () => {
+            playTone(200, 2, 'triangle');
+            whispersBtn.classList.add('active');
+            setTimeout(() => whispersBtn.classList.remove('active'), 2000);
+        });
+
+        windBtn.addEventListener('click', () => {
+            playTone(100, 3, 'sawtooth');
+            windBtn.classList.add('active');
+            setTimeout(() => windBtn.classList.remove('active'), 3000);
+        });
+
+        helloBtn.addEventListener('click', () => {
+            playTone(440, 0.5);
+            setTimeout(() => playTone(554, 0.5), 500);
+            showChatMessage();
+            helloBtn.classList.add('active');
+            setTimeout(() => helloBtn.classList.remove('active'), 1000);
+        });
+
+        booBtn.addEventListener('click', () => {
+            playTone(150, 1, 'square');
+            gameState.mood = 'spooky';
+            gameState.energy = Math.min(10, gameState.energy + 3);
+            updateGhostAppearance();
+            showChatMessage();
+            booBtn.classList.add('active');
+            setTimeout(() => booBtn.classList.remove('active'), 1000);
+        });
+
+        stopBtn.addEventListener('click', () => {
+            stopAudio();
+            gameState.mode = 'ambient';
+            gameState.animationStyle = 'gentle';
+            document.querySelectorAll('.control-btn.active').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            updateGhostAppearance();
+        });
+
+        // Ghost click interaction
+        ghost.addEventListener('click', () => {
+            changeMood();
+            showChatMessage();
+            gameState.energy = Math.min(10, gameState.energy + 1);
+            updateGhostAppearance();
+        });
+
+        // Settings icon interaction
+        document.querySelector('.settings-icon').addEventListener('click', () => {
+            alert('Settings panel would open here!\n\nCurrent features:\n• Interactive ghost with multiple moods\n• Animation controls\n• Audio feedback\n• Dynamic state management');
+        });
+
+        // Random ambient behaviors
+        setInterval(() => {
+            if (Math.random() < 0.1) { // 10% chance every 3 seconds
+                changeMood();
+            }
+            if (Math.random() < 0.05) { // 5% chance every 3 seconds
+                showChatMessage();
+            }
+        }, 3000);
+
+        // Initialize
+        updateGhostAppearance();
+        
+        // Welcome message
+        setTimeout(() => {
+            showChatMessage();
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: Arial, sans-serif;
+        }
+        #renderCanvas { 
+            width: 100%; 
+            height: 100vh; 
+            display: block;
+            touch-action: none;
+        }
+        #info { 
+            position: absolute; 
+            top: 10px; 
+            left: 10px; 
+            color: #fff; 
+            opacity: 0.5;
+            font-size: 12px;
+            z-index: 100;
+        }
+        #debug {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: #fff;
+            font-family: monospace;
+            font-size: 11px;
+            opacity: 0.7;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">Click to enable sound</div>
+    <div id="debug">Loading...</div>
+    <canvas id="renderCanvas"></canvas>
+    
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+    
+    <script>
+        const canvas = document.getElementById("renderCanvas");
+        const engine = new BABYLON.Engine(canvas, true);
+        
+        const createScene = function() {
+            const scene = new BABYLON.Scene(engine);
+            scene.clearColor = new BABYLON.Color3(0.1, 0, 0.1);
+            
+            // Camera
+            const camera = new BABYLON.FreeCamera("camera", new BABYLON.Vector3(0, 2, -8), scene);
+            camera.setTarget(BABYLON.Vector3.Zero());
+            camera.attachControl(canvas, true);
+            
+            // Light
+            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+            light.intensity = 0.7;
+            
+            const pointLight = new BABYLON.PointLight("pointLight", new BABYLON.Vector3(0, 1, 0), scene);
+            pointLight.diffuse = new BABYLON.Color3(1, 0.5, 0.5);
+            pointLight.intensity = 1;
+            
+            // Materials
+            const redMat = new BABYLON.StandardMaterial("red", scene);
+            redMat.diffuseColor = new BABYLON.Color3(0.8, 0, 0);
+            redMat.specularColor = new BABYLON.Color3(0.2, 0, 0);
+            
+            const blackMat = new BABYLON.StandardMaterial("black", scene);
+            blackMat.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+            
+            const yellowMat = new BABYLON.StandardMaterial("yellow", scene);
+            yellowMat.diffuseColor = new BABYLON.Color3(1, 1, 0);
+            yellowMat.emissiveColor = new BABYLON.Color3(0.5, 0.5, 0);
+            
+            // Create imp
+            const imp = new BABYLON.TransformNode("imp", scene);
+            
+            // Head
+            const head = BABYLON.MeshBuilder.CreateSphere("head", {diameter: 1}, scene);
+            head.position.y = 1.5;
+            head.material = redMat;
+            head.parent = imp;
+            
+            // Body
+            const body = BABYLON.MeshBuilder.CreateSphere("body", {diameter: 0.8}, scene);
+            body.position.y = 0.8;
+            body.scaling.y = 1.2;
+            body.material = redMat;
+            body.parent = imp;
+            
+            // Horns
+            const leftHorn = BABYLON.MeshBuilder.CreateCylinder("leftHorn", {
+                height: 0.5,
+                diameterBottom: 0.15,
+                diameterTop: 0.01,
+                tessellation: 6
+            }, scene);
+            leftHorn.position.set(-0.25, 2, 0);
+            leftHorn.rotation.z = -0.3;
+            leftHorn.material = blackMat;
+            leftHorn.parent = imp;
+            
+            const rightHorn = BABYLON.MeshBuilder.CreateCylinder("rightHorn", {
+                height: 0.5,
+                diameterBottom: 0.15,
+                diameterTop: 0.01,
+                tessellation: 6
+            }, scene);
+            rightHorn.position.set(0.25, 2, 0);
+            rightHorn.rotation.z = 0.3;
+            rightHorn.material = blackMat;
+            rightHorn.parent = imp;
+            
+            // Eyes
+            const leftEye = BABYLON.MeshBuilder.CreateSphere("leftEye", {diameter: 0.15}, scene);
+            leftEye.position.set(-0.2, 1.6, 0.4);
+            leftEye.material = yellowMat;
+            leftEye.parent = imp;
+            
+            const rightEye = BABYLON.MeshBuilder.CreateSphere("rightEye", {diameter: 0.15}, scene);
+            rightEye.position.set(0.2, 1.6, 0.4);
+            rightEye.material = yellowMat;
+            rightEye.parent = imp;
+            
+            // Pupils
+            const leftPupil = BABYLON.MeshBuilder.CreateSphere("leftPupil", {diameter: 0.08}, scene);
+            leftPupil.position.set(-0.2, 1.6, 0.45);
+            leftPupil.material = blackMat;
+            leftPupil.parent = imp;
+            
+            const rightPupil = BABYLON.MeshBuilder.CreateSphere("rightPupil", {diameter: 0.08}, scene);
+            rightPupil.position.set(0.2, 1.6, 0.45);
+            rightPupil.material = blackMat;
+            rightPupil.parent = imp;
+            
+            // Arms
+            const leftArm = BABYLON.MeshBuilder.CreateCylinder("leftArm", {height: 0.6, diameter: 0.15}, scene);
+            leftArm.position.set(-0.5, 1.2, 0);
+            leftArm.rotation.z = 0.5;
+            leftArm.material = redMat;
+            leftArm.parent = imp;
+            
+            const rightArm = BABYLON.MeshBuilder.CreateCylinder("rightArm", {height: 0.6, diameter: 0.15}, scene);
+            rightArm.position.set(0.5, 1.2, 0);
+            rightArm.rotation.z = -0.5;
+            rightArm.material = redMat;
+            rightArm.parent = imp;
+            
+            // Legs
+            const leftLeg = BABYLON.MeshBuilder.CreateCylinder("leftLeg", {height: 0.6, diameter: 0.18}, scene);
+            leftLeg.position.set(-0.2, 0.3, 0);
+            leftLeg.material = redMat;
+            leftLeg.parent = imp;
+            
+            const rightLeg = BABYLON.MeshBuilder.CreateCylinder("rightLeg", {height: 0.6, diameter: 0.18}, scene);
+            rightLeg.position.set(0.2, 0.3, 0);
+            rightLeg.material = redMat;
+            rightLeg.parent = imp;
+            
+            // Simple tail
+            const tail = BABYLON.MeshBuilder.CreateCylinder("tail", {height: 1, diameter: 0.1}, scene);
+            tail.position.set(0, 0.8, -0.5);
+            tail.rotation.x = -0.8;
+            tail.material = redMat;
+            tail.parent = imp;
+            
+            // Ground
+            const ground = BABYLON.MeshBuilder.CreateGround("ground", {width: 20, height: 20}, scene);
+            ground.material = new BABYLON.StandardMaterial("groundMat", scene);
+            ground.material.diffuseColor = new BABYLON.Color3(0.2, 0.1, 0.1);
+            
+            // GUI for speech
+            const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+            
+            const speechRect = new BABYLON.GUI.Rectangle();
+            speechRect.width = "300px";
+            speechRect.height = "80px";
+            speechRect.cornerRadius = 20;
+            speechRect.color = "white";
+            speechRect.thickness = 0;
+            speechRect.background = "red";
+            speechRect.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+            speechRect.top = "100px";
+            speechRect.isVisible = false;
+            advancedTexture.addControl(speechRect);
+            
+            const speechText = new BABYLON.GUI.TextBlock();
+            speechText.text = "";
+            speechText.color = "white";
+            speechText.fontSize = 24;
+            speechText.fontWeight = "bold";
+            speechRect.addControl(speechText);
+            
+            // State
+            const state = {
+                activity: 'idle',
+                timers: {
+                    activity: 0,
+                    speak: 0
+                }
+            };
+            
+            // Phrases
+            const phrases = [
+                "Mwahahaha!",
+                "Hello mortal!",
+                "Want to play?",
+                "I'm a friendly imp!",
+                "*dances*",
+                "Boo!",
+                "Hehehe!"
+            ];
+            
+            function speak(text) {
+                speechText.text = text || phrases[Math.floor(Math.random() * phrases.length)];
+                speechRect.isVisible = true;
+                setTimeout(() => {
+                    speechRect.isVisible = false;
+                }, 2500);
+            }
+            
+            // Audio
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            function playSound() {
+                if (audioContext.state === 'suspended') return;
+                
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.frequency.value = 200 + Math.random() * 200;
+                gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.5);
+            }
+            
+            // Animation
+            let time = 0;
+            scene.registerBeforeRender(function() {
+                const deltaTime = engine.getDeltaTime() / 1000;
+                time += deltaTime;
+                
+                // Update timers
+                state.timers.activity += deltaTime;
+                state.timers.speak += deltaTime;
+                
+                // Floating animation
+                imp.position.y = Math.sin(time * 2) * 0.1;
+                
+                // Light flicker
+                pointLight.intensity = 1 + Math.sin(time * 10) * 0.2;
+                
+                // Tail wag
+                tail.rotation.z = Math.sin(time * 3) * 0.3;
+                
+                // Activities
+                if (state.timers.activity > 5) {
+                    state.timers.activity = 0;
+                    
+                    if (state.activity === 'idle') {
+                        state.activity = 'move';
+                        imp.position.x = (Math.random() - 0.5) * 4;
+                        imp.position.z = (Math.random() - 0.5) * 4;
+                    } else {
+                        state.activity = 'idle';
+                        imp.position.x = 0;
+                        imp.position.z = 0;
+                    }
+                }
+                
+                // Random speech
+                if (state.timers.speak > 7) {
+                    state.timers.speak = 0;
+                    speak();
+                    playSound();
+                }
+                
+                // Arm wave
+                leftArm.rotation.z = 0.5 + Math.sin(time * 3) * 0.2;
+                rightArm.rotation.z = -0.5 - Math.sin(time * 3) * 0.2;
+                
+                // Update debug
+                document.getElementById('debug').innerHTML = `Activity: ${state.activity} | FPS: ${engine.getFps().toFixed()}`;
+            });
+            
+            // Initial greeting
+            setTimeout(() => {
+                speak("Mwahahaha! I'm alive!");
+                playSound();
+            }, 1000);
+            
+            // Click handler
+            canvas.addEventListener('click', function() {
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                document.getElementById('info').style.display = 'none';
+            }, { once: true });
+            
+            return scene;
+        };
+        
+        const scene = createScene();
+        
+        engine.runRenderLoop(function() {
+            scene.render();
+        });
+        
+        window.addEventListener("resize", function() {
+            engine.resize();
+        });
+    </script>
+</body>
+</html>

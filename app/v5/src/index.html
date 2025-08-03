@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Bogart - Reborn</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="ghost-container">
+            <div class="ghost" id="ghost">
+                <div class="eyes">
+                    <div class="eye" id="left-eye"></div>
+                    <div class="eye" id="right-eye"></div>
+                </div>
+                <div class="mouth" id="mouth"></div>
+                <div class="ghost-bottom"></div>
+                <div class="shadow"></div>
+                <div class="sparkles" id="sparkles-container"></div>
+            </div>
+        </div>
+
+        <div class="current-state" id="current-state">
+            <div class="state-item">
+                <span>Mood:</span>
+                <span id="current-mood">friendly</span>
+            </div>
+            <div class="state-item">
+                <span>Energy:</span>
+                <span id="current-energy">5</span>
+            </div>
+        </div>
+         <div class="chat-bubble" id="chat-bubble">Boo!</div>
+
+        <div class="settings-icon" id="settings-toggle">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M19.829 15.092C19.9212 15.653 19.9755 16.2233 19.9902 16.7984C19.9983 17.2882 19.9327 17.7736 19.7961 18.232C19.6231 18.7993 19.2973 19.3039 18.8571 19.6834L17.4033 20.943C16.923 21.3621 16.3245 21.6111 15.7018 21.6425C15.0717 21.6744 14.4532 21.4886 13.9455 21.1197L12.012 19.8824C11.3323 19.4326 10.8351 18.761 10.6322 17.9944C10.5186 17.5614 10.4746 17.1128 10.5029 16.6657C10.5233 16.3312 10.5794 16.0003 10.6698 15.6787C10.7494 15.3995 10.8656 15.1378 11.0143 14.9009L12.4841 12.7934C12.7212 12.4353 13.102 12.1555 13.538 12.0232C13.8433 11.928 14.1633 11.888 14.4822 11.9059C15.2222 11.9482 15.9123 12.3162 16.42 12.8934L18.2536 14.992C18.4973 15.2703 18.675 15.597 18.7766 15.9529C18.8466 16.2023 18.8797 16.4632 18.874 16.724C18.8633 17.221 18.6943 17.7015 18.3888 18.0934L17.375 19.2559C17.2001 19.4536 16.9452 19.5613 16.6802 19.5444C16.4258 19.5281 16.1912 19.3897 16.0463 19.1746L14.5727 17.0621C14.2237 16.5681 13.6798 16.249 13.088 16.249C12.556 16.249 12.0578 16.5165 11.7503 16.949L10.2767 19.0615C10.1318 19.2766 9.89726 19.415 9.64283 19.4313C9.37783 19.4482 9.12293 19.3405 8.94803 19.1428L7.93427 17.9803C7.62873 17.5884 7.45973 17.1079 7.44903 16.6109C7.43323 15.8759 7.74753 15.1741 8.28303 14.6853L10.1166 12.5867C10.3603 12.3084 10.538 11.9817 10.6396 11.6258C10.71 11.3764 10.743 11.1155 10.7373 10.8547C10.7266 10.3577 10.5576 9.87723 10.2521 9.4853L9.23829 8.3228C9.06339 8.1251 8.80849 8.0174 8.54349 8.0005L5.78311 7.80016C5.07311 7.75016 4.41511 7.41286 3.96311 6.86686L2.48411 5.1436C2.10661 4.7068 1.88811 4.1485 1.86561 3.565C1.83111 2.683 2.21361 1.8415 2.88011 1.276L4.81461 -0.0919999C5.46261 -0.6402 6.33611 -0.916799 7.18511 -0.832299C7.94711 -0.757299 8.64611 -0.344099 9.12561 0.254101L10.5901 1.9701C10.9701 2.4101 11.1961 2.9756 11.2211 3.5658C11.2581 4.4263 10.8926 5.2533 10.2446 5.8423L8.31011 7.2103C7.66211 7.6588 7.24711 8.3498 7.13511 9.1238C7.02611 9.8828 7.24211 10.6698 7.72161 11.2688L8.71611 12.4113C8.89111 12.6083 9.14611 12.7153 9.41111 12.6983C9.65511 12.6833 9.88161 12.5533 10.0241 12.3513L11.4886 10.6346C12.1366 10.0861 13.0101 9.8095 13.8591 9.894C14.6211 9.969 15.3201 10.3822 15.8004 10.981L17.2649 12.697C17.6449 13.137 17.8709 13.7025 17.8459 14.292C17.8089 15.1533 17.4434 15.9803 16.7954 16.5693L15.3316 17.8423C15.0041 18.1213 14.5716 18.2583 14.1516 18.1963C13.6826 18.1263 13.2796 17.8683 13.0426 17.4913L11.5789 15.7746C11.3934 15.5485 11.1197 15.4191 10.8351 15.4268C10.56 15.4341 10.2973 15.5783 10.1451 15.8176L8.68136 17.5344C8.03336 18.0829 7.15986 18.3595 6.31086 18.275C5.54886 18.2 4.84986 17.7868 4.36961 17.1873L2.90586 15.4706C2.52586 15.0306 2.30061 14.4658 2.32486 13.8763C2.36186 13.015 2.72736 12.188 3.37536 11.6L4.83911 10.327C5.16661 10.048 5.59911 9.911 6.01911 9.973L8.77961 10.1733C9.48961 10.2233 10.1476 10.5606 10.5996 11.1066L12.0786 12.8299C12.4561 13.2667 12.6746 13.825 12.6521 14.4085C12.6176 15.2905 12.2351 16.132 11.5686 16.6965L9.63411 18.0645C8.98611 18.513 8.57111 19.204 8.68311 19.978C8.79511 20.752 9.22386 21.4555 9.87186 21.904L11.8054 23.1413C12.7031 23.7547 13.8423 24.032 14.908 23.9103C15.9822 23.7874 16.9535 23.2758 17.6586 22.4837L19.1124 21.2241C19.8654 20.5746 20.3541 19.6738 20.4709 18.667C20.5516 17.9628 20.454 17.2555 20.1901 16.6154C20.0039 16.1751 19.8732 15.7226 19.829 15.092Z" /></svg>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal-container">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Ghost Controls</h2>
+                <span class="close-btn" id="close-modal-btn">&times;</span>
+            </div>
+            
+            <div class="control-group">
+                <h3>State</h3>
+                <div class="control-row">
+                    <label for="energy-slider">Energy</label>
+                    <input type="range" min="0" max="10" value="5" class="slider" id="energy-slider">
+                </div>
+                <div class="control-row">
+                    <label for="spooky-slider">Spookiness</label>
+                    <input type="range" min="0" max="10" value="2" class="slider" id="spooky-slider">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Actions</h3>
+                <div class="control-grid">
+                    <button class="control-btn" data-action="chat">💬 Chat</button>
+                    <button class="control-btn" data-action="sparkle">✨ Sparkle</button>
+                    <button class="control-btn" data-action="wobble">🌀 Wobble</button>
+                    <button class="control-btn" data-action="zoom">💨 Zoom</button>
+                    <button class="control-btn" data-action="spooky">👻 Spooky</button>
+                    <button class="control-btn" data-action="pulse">💖 Pulse</button>
+                </div>
+            </div>
+
+             <div class="control-group">
+                <h3>Audio</h3>
+                <div class="control-grid">
+                    <button class="control-btn" data-sound="whisper">Whisper</button>
+                    <button class="control-btn" data-sound="wind">Wind</button>
+                    <button class="control-btn" data-sound="hello">Hello</button>
+                    <button class="control-btn" data-sound="boo">Boo!</button>
+                    <button class="control-btn" data-sound="stop">Stop All</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <audio id="audio-whisper" src="#"></audio>
+    <audio id="audio-wind" src="#"></audio>
+    <audio id="audio-hello" src="#"></audio>
+    <audio id="audio-boo" src="#"></audio>
+
+    <script src="script.js"></script>
+</body>
+</html>

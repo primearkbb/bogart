@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Bogart - Interactive Ghost Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+```
+    body {
+        font-family: 'Arial', sans-serif;
+        background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+        min-height: 100vh;
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* Ambient background effects */
+    .fog {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at 20% 80%, rgba(255,255,255,0.03) 0%, transparent 50%),
+                   radial-gradient(circle at 80% 20%, rgba(255,255,255,0.03) 0%, transparent 50%);
+        animation: fogDrift 20s ease-in-out infinite alternate;
+    }
+
+    @keyframes fogDrift {
+        0% { transform: translateX(-10px) rotate(0deg); }
+        100% { transform: translateX(10px) rotate(1deg); }
+    }
+
+    .stars {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            radial-gradient(2px 2px at 20px 30px, #eee, transparent),
+            radial-gradient(2px 2px at 40px 70px, #fff, transparent),
+            radial-gradient(1px 1px at 90px 40px, #fff, transparent),
+            radial-gradient(1px 1px at 130px 80px, #fff, transparent),
+            radial-gradient(2px 2px at 160px 30px, #ddd, transparent);
+        background-repeat: repeat;
+        background-size: 200px 100px;
+        animation: starTwinkle 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes starTwinkle {
+        0% { opacity: 0.8; }
+        100% { opacity: 1; }
+    }
+
+    /* Main stage area */
+    .stage {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Ghost container */
+    .ghost-container {
+        position: relative;
+        transform: scale(1);
+        transition: transform 0.3s ease;
+    }
+
+    /* Ghost SVG */
+    .ghost {
+        width: 300px;
+        height: 400px;
+        filter: drop-shadow(0 0 20px rgba(255,255,255,0.3));
+        transition: filter 0.5s ease;
+    }
+
+    /* Ghost animations based on energy and mood */
+    .ghost.gentle {
+        animation: gentleFloat 4s ease-in-out infinite;
+    }
+
+    .ghost.dramatic {
+        animation: dramaticFloat 2s ease-in-out infinite;
+    }
+
+    .ghost.bouncy {
+        animation: bouncyFloat 1.5s ease-in-out infinite;
+    }
+
+    .ghost.eerie {
+        animation: eerieFloat 3s ease-in-out infinite;
+    }
+
+    @keyframes gentleFloat {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-15px) rotate(1deg); }
+    }
+
+    @keyframes dramaticFloat {
+        0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
+        25% { transform: translateY(-30px) rotate(-2deg) scale(1.05); }
+        75% { transform: translateY(-20px) rotate(2deg) scale(0.95); }
+    }
+
+    @keyframes bouncyFloat {
+        0%, 100% { transform: translateY(0px) scale(1); }
+        25% { transform: translateY(-20px) scale(1.1); }
+        50% { transform: translateY(-35px) scale(0.9); }
+        75% { transform: translateY(-15px) scale(1.05); }
+    }
+
+    @keyframes eerieFloat {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        33% { transform: translateY(-10px) rotate(-1deg); }
+        66% { transform: translateY(-25px) rotate(1deg); }
+    }
+
+    /* Mood-based effects */
+    .ghost.friendly {
+        filter: drop-shadow(0 0 30px rgba(255, 240, 150, 0.6));
+    }
+
+    .ghost.spooky {
+        filter: drop-shadow(0 0 25px rgba(150, 0, 255, 0.5));
+        animation-duration: 2s !important;
+    }
+
+    .ghost.playful {
+        filter: drop-shadow(0 0 20px rgba(0, 255, 150, 0.4));
+    }
+
+    .ghost.excited {
+        filter: drop-shadow(0 0 35px rgba(255, 100, 100, 0.6));
+        animation-duration: 1s !important;
+    }
+
+    .ghost.mysterious {
+        filter: drop-shadow(0 0 15px rgba(100, 100, 255, 0.3));
+    }
+
+    /* Effects overlay */
+    .effects-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 10;
+    }
+
+    .sparkle-effect {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: white;
+        border-radius: 50%;
+        animation: sparkle 2s ease-in-out infinite;
+    }
+
+    @keyframes sparkle {
+        0%, 100% { opacity: 0; transform: scale(0); }
+        50% { opacity: 1; transform: scale(1); }
+    }
+
+    .glow-effect {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        transform: translate(-50%, -50%);
+        animation: glow 3s ease-in-out infinite;
+    }
+
+    @keyframes glow {
+        0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+        50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.2); }
+    }
+
+    /* Control panel */
+    .controls {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 20px;
+        border-radius: 10px;
+        color: white;
+        z-index: 100;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .control-group {
+        margin-bottom: 15px;
+    }
+
+    .control-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 12px;
+        color: #ccc;
+        text-transform: uppercase;
+    }
+
+    .control-group select, .control-group input {
+        width: 150px;
+        padding: 5px;
+        border: none;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        font-size: 12px;
+    }
+
+    .control-group input[type="range"] {
+        width: 120px;
+    }
+
+    /* State indicator */
+    .state-indicator {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 20px;
+        border-radius: 10px;
+        color: white;
+        z-index: 100;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        min-width: 200px;
+    }
+
+    .state-indicator h3 {
+        margin-bottom: 10px;
+        color: #4CAF50;
+    }
+
+    .state-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        font-size: 12px;
+    }
+
+    /* Interaction modes */
+    .mode-active .ghost-container {
+        transform: scale(1.1);
+    }
+
+    .mode-shy .ghost-container {
+        transform: scale(0.9);
+        opacity: 0.8;
+    }
+
+    .mode-bold .ghost-container {
+        transform: scale(1.2);
+    }
+
+    .mode-curious .ghost {
+        animation-duration: 1.5s !important;
+    }
+
+    /* Ambient audio indicator */
+    .audio-indicator {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 10px;
+        border-radius: 5px;
+        color: white;
+        font-size: 12px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Conversation mode indicator */
+    .conversation-mode {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(76, 175, 80, 0.8);
+        padding: 10px 20px;
+        border-radius: 20px;
+        color: white;
+        font-size: 14px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.3s ease;
+    }
+
+    .conversation-mode.active {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* Demo controls */
+    .demo-controls {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+    }
+
+    .demo-btn {
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 20px;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        font-size: 12px;
+    }
+
+    .demo-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+    }
+</style>
+```
+
+</head>
+<body>
+    <div class="fog"></div>
+    <div class="stars"></div>
+
+```
+<div class="stage">
+    <div class="ghost-container">
+        <svg class="ghost gentle friendly" viewBox="0 0 300 400" xmlns="http://www.w3.org/2000/svg">
+            <!-- Ghost body -->
+            <path id="ghost-body" d="M150 50 C100 50, 70 80, 70 130 L70 300 C70 320, 80 330, 90 330 C100 320, 110 330, 120 330 C130 320, 140 330, 150 330 C160 320, 170 330, 180 330 C190 320, 200 330, 210 330 C220 320, 230 300, 230 300 L230 130 C230 80, 200 50, 150 50 Z" 
+                  fill="rgba(255, 255, 255, 0.9)" 
+                  stroke="rgba(255, 255, 255, 0.3)" 
+                  stroke-width="2"/>
+            
+            <!-- Eyes -->
+            <ellipse id="left-eye" cx="120" cy="120" rx="12" ry="15" fill="#333">
+                <animateTransform attributeName="transform" type="scale" 
+                                values="1,1;1,0.1;1,1" dur="3s" repeatCount="indefinite"/>
+            </ellipse>
+            <ellipse id="right-eye" cx="180" cy="120" rx="12" ry="15" fill="#333">
+                <animateTransform attributeName="transform" type="scale" 
+                                values="1,1;1,0.1;1,1" dur="3s" repeatCount="indefinite"/>
+            </ellipse>
+            
+            <!-- Mouth -->
+            <ellipse id="mouth" cx="150" cy="160" rx="8" ry="12" fill="#333">
+                <animate attributeName="ry" values="12;18;12" dur="2s" repeatCount="indefinite"/>
+            </ellipse>
+            
+            <!-- Inner glow -->
+            <ellipse cx="150" cy="180" rx="80" ry="120" fill="url(#innerGlow)" opacity="0.6"/>
+            
+            <!-- Definitions for gradients -->
+            <defs>
+                <radialGradient id="innerGlow" cx="50%" cy="40%">
+                    <stop offset="0%" stop-color="rgba(255,255,255,0.4)"/>
+                    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+                </radialGradient>
+            </defs>
+        </svg>
+        
+        <div class="effects-overlay">
+            <!-- Sparkle effects will be added dynamically -->
+        </div>
+    </div>
+</div>
+
+<!-- Control Panel -->
+<div class="controls">
+    <h3 style="margin-bottom: 15px; color: #4CAF50;">Ghost Controls</h3>
+    
+    <div class="control-group">
+        <label>Mood</label>
+        <select id="mood-select">
+            <option value="friendly">Friendly</option>
+            <option value="spooky">Spooky</option>
+            <option value="playful">Playful</option>
+            <option value="excited">Excited</option>
+            <option value="mysterious">Mysterious</option>
+        </select>
+    </div>
+
+    <div class="control-group">
+        <label>Animation Style</label>
+        <select id="animation-select">
+            <option value="gentle">Gentle</option>
+            <option value="dramatic">Dramatic</option>
+            <option value="bouncy">Bouncy</option>
+            <option value="eerie">Eerie</option>
+        </select>
+    </div>
+
+    <div class="control-group">
+        <label>Energy Level: <span id="energy-value">5</span></label>
+        <input type="range" id="energy-slider" min="1" max="10" value="5">
+    </div>
+
+    <div class="control-group">
+        <label>Interaction Mode</label>
+        <select id="mode-select">
+            <option value="active">Active</option>
+            <option value="shy">Shy</option>
+            <option value="bold">Bold</option>
+            <option value="curious">Curious</option>
+        </select>
+    </div>
+</div>
+
+<!-- State Indicator -->
+<div class="state-indicator">
+    <h3>Current State</h3>
+    <div class="state-item">
+        <span>Mood:</span>
+        <span id="current-mood">Friendly</span>
+    </div>
+    <div class="state-item">
+        <span>Energy:</span>
+        <span id="current-energy">5/10</span>
+    </div>
+    <div class="state-item">
+        <span>Animation:</span>
+        <span id="current-animation">Gentle</span>
+    </div>
+    <div class="state-item">
+        <span>Mode:</span>
+        <span id="current-mode">Active</span>
+    </div>
+    <div class="state-item">
+        <span>Status:</span>
+        <span id="current-status">Ambient</span>
+    </div>
+</div>
+
+<!-- Demo Controls -->
+<div class="demo-controls">
+    <button class="demo-btn" onclick="triggerGreeting()">🎃 Trigger Greeting</button>
+    <button class="demo-btn" onclick="startConversation()">💬 Start Conversation</button>
+    <button class="demo-btn" onclick="triggerEffect('sparkle')">✨ Sparkle Effect</button>
+    <button class="demo-btn" onclick="triggerEffect('glow')">🌟 Glow Effect</button>
+    <button class="demo-btn" onclick="resetToAmbient()">🌙 Ambient Mode</button>
+</div>
+
+<!-- Audio Indicator -->
+<div class="audio-indicator">
+    🔊 Ambient: <span id="ambient-audio">Whispers</span>
+</div>
+
+<!-- Conversation Mode Indicator -->
+<div class="conversation-mode" id="conversation-indicator">
+    Listening for trick-or-treaters...
+</div>
+
+<script>
+    // State management
+    let currentState = {
+        mood: 'friendly',
+        animation: 'gentle',
+        energy: 5,
+        mode: 'active',
+        status: 'ambient'
+    };
+
+    // DOM elements
+    const ghost = document.querySelector('.ghost');
+    const ghostContainer = document.querySelector('.ghost-container');
+    const effectsOverlay = document.querySelector('.effects-overlay');
+    const conversationIndicator = document.getElementById('conversation-indicator');
+
+    // Control handlers
+    document.getElementById('mood-select').addEventListener('change', function(e) {
+        updateGhostState({ mood: e.target.value });
+    });
+
+    document.getElementById('animation-select').addEventListener('change', function(e) {
+        updateGhostState({ animation: e.target.value });
+    });
+
+    document.getElementById('energy-slider').addEventListener('input', function(e) {
+        updateGhostState({ energy: parseInt(e.target.value) });
+    });
+
+    document.getElementById('mode-select').addEventListener('change', function(e) {
+        updateGhostState({ mode: e.target.value });
+    });
+
+    // State update function
+    function updateGhostState(newState) {
+        // Update current state
+        Object.assign(currentState, newState);
+
+        // Update visual state
+        ghost.className = `ghost ${currentState.animation} ${currentState.mood}`;
+        ghostContainer.className = `ghost-container mode-${currentState.mode}`;
+
+        // Update energy-based effects
+        const energyFactor = currentState.energy / 10;
+        ghost.style.animationDuration = `${(3 - energyFactor * 2)}s`;
+
+        // Update state display
+        updateStateDisplay();
+
+        // Log state change (simulating server communication)
+        console.log('Ghost state updated:', currentState);
+    }
+
+    // Update state display
+    function updateStateDisplay() {
+        document.getElementById('current-mood').textContent = currentState.mood;
+        document.getElementById('current-energy').textContent = `${currentState.energy}/10`;
+        document.getElementById('current-animation').textContent = currentState.animation;
+        document.getElementById('current-mode').textContent = currentState.mode;
+        document.getElementById('current-status').textContent = currentState.status;
+        document.getElementById('energy-value').textContent = currentState.energy;
+    }
+
+    // Demo functions
+    function triggerGreeting() {
+        updateGhostState({ 
+            status: 'greeting',
+            mood: 'excited',
+            animation: 'bouncy',
+            energy: 8
+        });
+
+        conversationIndicator.textContent = '👋 Hello there, trick-or-treater!';
+        conversationIndicator.classList.add('active');
+
+        setTimeout(() => {
+            conversationIndicator.classList.remove('active');
+            updateGhostState({ status: 'ambient' });
+        }, 3000);
+    }
+
+    function startConversation() {
+        updateGhostState({ 
+            status: 'conversation',
+            mood: 'friendly',
+            animation: 'gentle',
+            energy: 6
+        });
+
+        const responses = [
+            '🎃 What costume are you wearing?',
+            '👻 Are you having a spooky Halloween?',
+            '🍭 How much candy have you collected?',
+            '🌙 Do you like ghost stories?',
+            '⭐ What\'s your favorite Halloween movie?'
+        ];
+
+        conversationIndicator.textContent = responses[Math.floor(Math.random() * responses.length)];
+        conversationIndicator.classList.add('active');
+
+        setTimeout(() => {
+            conversationIndicator.classList.remove('active');
+            updateGhostState({ status: 'ambient' });
+        }, 4000);
+    }
+
+    function triggerEffect(effectType) {
+        if (effectType === 'sparkle') {
+            createSparkleEffect();
+        } else if (effectType === 'glow') {
+            createGlowEffect();
+        }
+    }
+
+    function createSparkleEffect() {
+        for (let i = 0; i < 10; i++) {
+            setTimeout(() => {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle-effect';
+                sparkle.style.left = Math.random() * 300 + 'px';
+                sparkle.style.top = Math.random() * 400 + 'px';
+                sparkle.style.animationDelay = Math.random() * 1 + 's';
+                effectsOverlay.appendChild(sparkle);
+
+                setTimeout(() => {
+                    sparkle.remove();
+                }, 2000);
+            }, i * 100);
+        }
+    }
+
+    function createGlowEffect() {
+        const glow = document.createElement('div');
+        glow.className = 'glow-effect';
+        effectsOverlay.appendChild(glow);
+
+        setTimeout(() => {
+            glow.remove();
+        }, 3000);
+    }
+
+    function resetToAmbient() {
+        updateGhostState({
+            mood: 'friendly',
+            animation: 'gentle',
+            energy: 5,
+            mode: 'active',
+            status: 'ambient'
+        });
+
+        conversationIndicator.classList.remove('active');
+    }
+
+    // Ambient behaviors
+    function ambientBehaviors() {
+        setInterval(() => {
+            if (currentState.status === 'ambient') {
+                // Random mood shifts
+                if (Math.random() < 0.1) {
+                    const moods = ['friendly', 'mysterious', 'playful'];
+                    const randomMood = moods[Math.floor(Math.random() * moods.length)];
+                    updateGhostState({ mood: randomMood });
+                }
+
+                // Random sparkles
+                if (Math.random() < 0.3) {
+                    createSparkleEffect();
+                }
+            }
+        }, 2000);
+    }
+
+    // Initialize
+    updateStateDisplay();
+    ambientBehaviors();
+
+    // Simulate environmental responses
+    setInterval(() => {
+        if (currentState.status === 'ambient' && Math.random() < 0.1) {
+            updateGhostState({ energy: Math.max(1, currentState.energy + (Math.random() > 0.5 ? 1 : -1)) });
+        }
+    }, 5000);
+
+    console.log('🎃 Project Bogart Ghost Demo Initialized');
+    console.log('👻 Use the controls to see different ghost states and behaviors!');
+</script>
+```
+
+</body>
+</html>
