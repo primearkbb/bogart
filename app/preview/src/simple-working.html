@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>3D Ghost Character - Interactive Spirit</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0c0c0c 0%, #2d1b69 50%, #0c0c0c 100%);
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+        
+        #renderCanvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+        
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffffff;
+            font-size: 18px;
+            text-align: center;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        #speechBubble {
+            display: none;
+            position: fixed;
+            color: #ffffff;
+            font-size: 18px;
+            text-align: center;
+            background-color: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 20px;
+            z-index: 1000;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">Manifesting ethereal spirit...</div>
+    <div id="speechBubble"></div>
+    <canvas id="renderCanvas"></canvas>
+
+    <!-- Three.js from reliable CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r150/three.min.js" integrity="sha512-eCRAZZ3ky6ew0KQu/F5yz+Cb8aPBSq5s7yEOQqM+JKmkJMGZL0TYMWMhUhFBMjpV9Gj2s8pUUxIL8p5ehAcIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
+    <script>
+    // GLTFLoader inline to avoid loading issues
+    (function(global, factory) {
+        if (typeof module === 'object' && typeof module.exports === 'object') {
+            module.exports = factory();
+        } else if (typeof define === 'function' && define.amd) {
+            define(factory);
+        } else {
+            global.GLTFLoader = factory();
+        }
+    })(typeof window !== 'undefined' ? window : this, function() {
+        'use strict';
+        
+        function GLTFLoader(manager) {
+            THREE.Loader.call(this, manager);
+            this.dracoLoader = null;
+            this.ktx2Loader = null;
+            this.meshoptDecoder = null;
+            this.pluginCallbacks = [];
+            this.register(function(parser) {
+                return new GLTFMaterialsClearcoatExtension(parser);
+            });
+        }
+        
+        GLTFLoader.prototype = Object.assign(Object.create(THREE.Loader.prototype), {
+            constructor: GLTFLoader,
+            
+            load: function(url, onLoad, onProgress, onError) {
+                var scope = this;
+                var loader = new THREE.FileLoader(scope.manager);
+                loader.setPath(scope.path);
+                loader.setResponseType('arraybuffer');
+                loader.setRequestHeader(scope.requestHeader);
+                loader.setWithCredentials(scope.withCredentials);
+                
+                loader.load(url, function(data) {
+                    try {
+                        scope.parse(data, scope.path, function(gltf) {
+                            onLoad(gltf);
+                        }, onError);
+                    } catch (e) {
+                        if (onError) {
+                            onError(e);
+                        } else {
+                            console.error(e);
+                        }
+                        scope.manager.itemError(url);
+                    }
+                }, onProgress, onError);
+            },
+            
+            parse: function(data, path, onLoad, onError) {
+                // Basic GLTF parsing - simplified for demo
+                try {
+                    var json, chunkData;
+                    var decoder = new TextDecoder();
+                    
+                    if (typeof data === 'string') {
+                        json = JSON.parse(data);
+                    } else {
+                        var magic = decoder.decode(new Uint8Array(data, 0, 4));
+                        if (magic === 'glTF') {
+                            // GLB format
+                            var version = new DataView(data, 4, 4).getUint32(0, true);
+                            var length = new DataView(data, 8, 4).getUint32(0, true);
+                            var chunkLength = new DataView(data, 12, 4).getUint32(0, true);
+                            var chunkType = new DataView(data, 16, 4).getUint32(0, true);
+                            
+                            if (chunkType === 0x4E4F534A) { // JSON
+                                var jsonData = new Uint8Array(data, 20, chunkLength);
+                                json = JSON.parse(decoder.decode(jsonData));
+                                
+                                if (20 + chunkLength < length) {
+                                    var binaryChunkLength = new DataView(data, 20 + chunkLength, 4).getUint32(0, true);
+                                    chunkData = data.slice(20 + chunkLength + 8, 20 + chunkLength + 8 + binaryChunkLength);
+                                }
+                            }
+                        } else {
+                            json = JSON.parse(decoder.decode(new Uint8Array(data)));
+                        }
+                    }
+                    
+                    this.parseGLTF(json, chunkData, path, onLoad, onError);
+                } catch (error) {
+                    if (onError) onError(error);
+                }
+            },
+            
+            parseGLTF: function(json, binaryData, path, onLoad, onError) {
+                try {
+                    var scene = new THREE.Scene();
+                    var animations = [];
+                    
+                    // Parse buffers
+                    var buffers = [];
+                    if (json.buffers) {
+                        json.buffers.forEach(function(bufferDef, index) {
+                            if (binaryData && index === 0) {
+                                buffers[index] = binaryData;
+                            }
+                        });
+                    }
+                    
+                    // Parse buffer views
+                    var bufferViews = [];
+                    if (json.bufferViews) {
+                        json.bufferViews.forEach(function(bufferViewDef, index) {
+                            var buffer = buffers[bufferViewDef.buffer];
+                            if (buffer) {
+                                bufferViews[index] = new Uint8Array(buffer, bufferViewDef.byteOffset || 0, bufferViewDef.byteLength);
+                            }
+                        });
+                    }
+                    
+                    // Parse accessors
+                    var accessors = [];
+                    if (json.accessors) {
+                        json.accessors.forEach(function(accessorDef, index) {
+                            var bufferView = bufferViews[accessorDef.bufferView];
+                            if (bufferView) {
+                                var itemSize = {
+                                    'SCALAR': 1,
+                                    'VEC2': 2,
+                                    'VEC3': 3,
+                                    'VEC4': 4
+                                }[accessorDef.type];
+                                
+                                var TypedArray = {
+                                    5120: Int8Array,
+                                    5121: Uint8Array,
+                                    5122: Int16Array,
+                                    5123: Uint16Array,
+                                    5125: Uint32Array,
+                                    5126: Float32Array
+                                }[accessorDef.componentType];
+                                
+                                var array = new TypedArray(bufferView.buffer, bufferView.byteOffset + (accessorDef.byteOffset || 0), accessorDef.count * itemSize);
+                                
+                                var attribute = new THREE.BufferAttribute(array, itemSize);
+                                accessors[index] = attribute;
+                            }
+                        });
+                    }
+                    
+                    // Parse meshes
+                    var meshes = [];
+                    if (json.meshes) {
+                        json.meshes.forEach(function(meshDef, index) {
+                            var geometry = new THREE.BufferGeometry();
+                            var material = new THREE.MeshPhongMaterial({ color: 0xf0f0ff });
+                            
+                            if (meshDef.primitives && meshDef.primitives[0]) {
+                                var primitive = meshDef.primitives[0];
+                                
+                                // Set attributes
+                                if (primitive.attributes.POSITION !== undefined) {
+                                    geometry.setAttribute('position', accessors[primitive.attributes.POSITION]);
+                                }
+                                if (primitive.attributes.NORMAL !== undefined) {
+                                    geometry.setAttribute('normal', accessors[primitive.attributes.NORMAL]);
+                                }
+                                if (primitive.attributes.TEXCOORD_0 !== undefined) {
+                                    geometry.setAttribute('uv', accessors[primitive.attributes.TEXCOORD_0]);
+                                }
+                                
+                                // Set indices
+                                if (primitive.indices !== undefined) {
+                                    geometry.setIndex(accessors[primitive.indices]);
+                                }
+                            }
+                            
+                            var mesh = new THREE.Mesh(geometry, material);
+                            mesh.name = meshDef.name || 'mesh_' + index;
+                            meshes.push(mesh);
+                            scene.add(mesh);
+                        });
+                    }
+                    
+                    var result = {
+                        scene: scene,
+                        scenes: [scene],
+                        animations: animations,
+                        cameras: [],
+                        asset: json.asset || {}
+                    };
+                    
+                    onLoad(result);
+                } catch (error) {
+                    if (onError) onError(error);
+                }
+            }
+        });
+        
+        return GLTFLoader;
+    });
+    
+    // Make GLTFLoader available
+    THREE.GLTFLoader = GLTFLoader;
+    </script>
+
+    <script>
+    // Clean Ghost implementation with fallbacks
+    class SimpleGhost {
+        constructor() {
+            this.canvas = document.getElementById('renderCanvas');
+            this.scene = null;
+            this.camera = null;
+            this.renderer = null;
+            this.ghostModel = null;
+            this.mixer = null;
+            this.clock = new THREE.Clock();
+            this.time = 0;
+        }
+
+        async init() {
+            try {
+                console.log('🔧 Initializing ghost...');
+                
+                // Setup renderer
+                this.setupRenderer();
+                
+                // Create scene
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(0x0d0d1f);
+                
+                // Setup camera
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.camera.position.set(0, 2, 5);
+                this.camera.lookAt(0, 1, 0);
+                
+                // Setup lighting
+                const ambientLight = new THREE.AmbientLight(0x6699ff, 0.4);
+                this.scene.add(ambientLight);
+                
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(2, 10, 5);
+                this.scene.add(directionalLight);
+                
+                const etherealLight = new THREE.PointLight(0x88aaff, 0.6, 10);
+                etherealLight.position.set(0, 3, 0);
+                this.scene.add(etherealLight);
+                
+                // Load ghost
+                await this.loadGhost();
+                
+                // Start animation
+                this.animate();
+                
+                // Handle resize
+                window.addEventListener('resize', () => this.onWindowResize());
+                
+                // Hide loading
+                document.getElementById('loading').style.display = 'none';
+                console.log('✅ Ghost initialized successfully');
+                
+            } catch (error) {
+                console.error('❌ Ghost initialization failed:', error);
+                
+                // Create fallback ghost if GLB fails
+                this.createFallbackGhost();
+                document.getElementById('loading').innerHTML = 'Ghost manifested (fallback mode)';
+                setTimeout(() => {
+                    document.getElementById('loading').style.display = 'none';
+                }, 2000);
+            }
+        }
+        
+        setupRenderer() {
+            this.renderer = new THREE.WebGLRenderer({ 
+                canvas: this.canvas,
+                antialias: true, 
+                alpha: true 
+            });
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        }
+        
+        async loadGhost() {
+            console.log('📦 Loading ghost GLB...');
+            
+            return new Promise((resolve, reject) => {
+                const loader = new THREE.GLTFLoader();
+                
+                loader.load(
+                    'assets/characters/Ghost/Mesh.glb',
+                    (gltf) => {
+                        console.log('✅ Ghost loaded');
+                        this.ghostModel = gltf.scene;
+                        this.ghostModel.scale.set(3, 3, 3);
+                        
+                        // Apply ghost material
+                        this.ghostModel.traverse((child) => {
+                            if (child.isMesh) {
+                                child.material = new THREE.MeshPhongMaterial({
+                                    color: 0xf0f0ff,
+                                    transparent: true,
+                                    opacity: 0.85,
+                                    emissive: 0x1a2a4a
+                                });
+                            }
+                        });
+                        
+                        this.scene.add(this.ghostModel);
+                        
+                        if (gltf.animations && gltf.animations.length > 0) {
+                            this.mixer = new THREE.AnimationMixer(this.ghostModel);
+                            const action = this.mixer.clipAction(gltf.animations[0]);
+                            action.play();
+                        }
+                        
+                        resolve();
+                    },
+                    (progress) => {
+                        console.log('Loading progress:', progress);
+                    },
+                    (error) => {
+                        console.error('Ghost loading failed:', error);
+                        reject(error);
+                    }
+                );
+            });
+        }
+        
+        createFallbackGhost() {
+            // Simple ghost geometry as fallback
+            const geometry = new THREE.SphereGeometry(1, 32, 32);
+            const material = new THREE.MeshPhongMaterial({
+                color: 0xf0f0ff,
+                transparent: true,
+                opacity: 0.85,
+                emissive: 0x1a2a4a
+            });
+            
+            this.ghostModel = new THREE.Mesh(geometry, material);
+            this.ghostModel.scale.set(1, 1.5, 1);
+            this.scene.add(this.ghostModel);
+            
+            console.log('✅ Fallback ghost created');
+            this.animate();
+        }
+        
+        animate() {
+            requestAnimationFrame(() => this.animate());
+            
+            const delta = this.clock.getDelta();
+            this.time += delta;
+            
+            if (this.mixer) {
+                this.mixer.update(delta);
+            }
+            
+            if (this.ghostModel) {
+                this.ghostModel.position.y = Math.sin(this.time * 1.2) * 0.3;
+                this.ghostModel.rotation.y += delta * 0.1;
+            }
+            
+            this.renderer.render(this.scene, this.camera);
+        }
+        
+        onWindowResize() {
+            this.camera.aspect = window.innerWidth / window.innerHeight;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        speak(text) {
+            const speechBubble = document.getElementById('speechBubble');
+            if (speechBubble) {
+                speechBubble.textContent = text;
+                speechBubble.style.display = 'block';
+                speechBubble.style.top = '20%';
+                speechBubble.style.left = '50%';
+                speechBubble.style.transform = 'translateX(-50%)';
+                
+                setTimeout(() => {
+                    speechBubble.style.display = 'none';
+                }, 3000);
+            }
+        }
+    }
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', () => {
+        const ghost = new SimpleGhost();
+        ghost.init();
+        
+        const speeches = [
+            "Welcome, mortal...",
+            "I sense your presence...",
+            "The veil between worlds grows thin...",
+            "Behold my ethereal form!",
+            "Do you believe in spirits?"
+        ];
+        
+        let speechIndex = 0;
+        document.addEventListener('click', () => {
+            if (ghost.ghostModel) {
+                ghost.speak(speeches[speechIndex % speeches.length]);
+                speechIndex++;
+            }
+        });
+    });
+    </script>
+</body>
+</html>
