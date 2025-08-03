@@ -23,6 +23,7 @@
     <div id="info">Loading...</div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/loaders/GLTFLoader.js"></script>
     <script>
         // Basic Three.js ghost
         let scene, camera, renderer, ghost;
@@ -47,7 +48,7 @@
                 return;
             }
             
-            // Create ghost (simple sphere for now)
+            // Create temporary ghost sphere
             const geometry = new THREE.SphereGeometry(1, 32, 32);
             const material = new THREE.MeshPhongMaterial({
                 color: 0xf0f0ff,
@@ -58,6 +59,43 @@
             });
             ghost = new THREE.Mesh(geometry, material);
             scene.add(ghost);
+            
+            // Load GLB ghost model
+            const loader = new THREE.GLTFLoader();
+            loader.load('assets/characters/Ghost/Mesh.glb', 
+                (gltf) => {
+                    // Success - replace sphere with actual ghost
+                    scene.remove(ghost);
+                    ghost = gltf.scene;
+                    ghost.scale.set(3, 3, 3);
+                    
+                    // Apply ghost material
+                    ghost.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material = new THREE.MeshPhongMaterial({
+                                color: 0xf0f0ff,
+                                emissive: 0x404080,
+                                emissiveIntensity: 0.2,
+                                transparent: true,
+                                opacity: 0.9
+                            });
+                        }
+                    });
+                    
+                    scene.add(ghost);
+                    document.getElementById('info').textContent = 'Ghost loaded! Click to interact.';
+                },
+                (progress) => {
+                    // Progress
+                    const percent = (progress.loaded / progress.total * 100).toFixed(0);
+                    document.getElementById('info').textContent = `Loading ghost... ${percent}%`;
+                },
+                (error) => {
+                    // Error - keep the sphere
+                    console.error('Failed to load GLB:', error);
+                    document.getElementById('info').textContent = 'Using fallback ghost. Click to interact.';
+                }
+            );
             
             // Add lights
             const light = new THREE.DirectionalLight(0xffffff, 1);
