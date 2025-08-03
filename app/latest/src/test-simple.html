@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Simple Test</title>
+</head>
+<body>
+    <div id="loading">Loading...</div>
+    <div id="debug">Debug info will appear here</div>
+    
+    <script>
+        console.log("Basic HTML loaded");
+        document.getElementById('debug').innerHTML = "HTML and basic JS working";
+        
+        // Test class definition
+        class TestClass {
+            constructor() {
+                this.message = "Class definition works";
+            }
+        }
+        
+        try {
+            const test = new TestClass();
+            document.getElementById('debug').innerHTML += "<br>Classes work: " + test.message;
+        } catch (e) {
+            document.getElementById('debug').innerHTML += "<br>Class error: " + e.message;
+        }
+        
+        // Test loading external scripts
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js';
+        script.onload = () => {
+            document.getElementById('debug').innerHTML += "<br>GSAP loaded successfully";
+        };
+        script.onerror = () => {
+            document.getElementById('debug').innerHTML += "<br>GSAP failed to load";
+        };
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>
