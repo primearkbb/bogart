@@ -403,7 +403,7 @@ class CharacterBuilder {
     }
     
     async loadGhostMesh(ghostRoot, materials) {
-        const meshPath = "/app/preview/src/assets/characters/Ghost/";
+        const meshPath = "assets/characters/Ghost/";
         const meshFile = "Mesh.glb";
         console.log("🔄 Attempting to load Ghost mesh from:", meshPath + meshFile);
         console.log("Full URL:", window.location.origin + window.location.pathname + meshPath + meshFile);
@@ -427,11 +427,15 @@ class CharacterBuilder {
             
             const onError = (scene, message, exception) => {
                 console.error("❌ Failed to load Ghost mesh:", message);
+                console.error("Scene:", scene);
+                console.error("Exception:", exception);
+                console.error("Exception type:", typeof exception);
                 if (exception) {
                     console.error("Exception details:", exception);
+                    console.error("Exception stack:", exception.stack);
                 }
-                console.error("Full path attempted:", window.location.origin + "/" + meshPath + meshFile);
-                resolve({ success: false, error: message || "Unknown error" });
+                console.error("Full path attempted:", window.location.origin + window.location.pathname + meshPath + meshFile);
+                resolve({ success: false, error: `${message || "Unknown error"} - ${exception ? exception.message : "No exception details"}` });
             };
             
             const onSuccess = (meshes, particleSystems, skeletons, animationGroups) => {
