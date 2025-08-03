@@ -66,8 +66,8 @@ const DEVIL_IMP_CONFIG = {
     
     // AI behavior settings
     ai: {
-        moods: ['mischievous', 'angry', 'playful', 'menacing', 'curious'],
-        activities: ['observing', 'prowling', 'performing', 'viewport_interaction'],
+        moods: ['showoff', 'mischievous', 'angry', 'playful', 'menacing', 'curious'],
+        activities: ['greeting_audience', 'fourth_wall_break', 'performance_trick', 'audience_engagement', 'showboating', 'observing', 'prowling', 'performing', 'viewport_interaction'],
         timers: {
             moodChangeMin: 15,
             moodChangeMax: 25,

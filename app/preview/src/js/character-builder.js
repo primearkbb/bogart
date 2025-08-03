@@ -197,7 +197,7 @@ class CharacterBuilder {
     
     createParticleSystem(emitter) {
         const config = DEVIL_IMP_CONFIG.particles;
-        const particleSystem = new BABYLON.ParticleSystem("fireParticles", config.count, this.scene);
+        const particleSystem = new BABYLON.ParticleSystem("fireParticles", 1200, this.scene);
         
         // Simple particle texture
         const fireTexture = new BABYLON.Texture("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAABklEQVQIHWPY/x8AAm8B6F6F0wsAAAAASUVORK5CYII=", this.scene);
@@ -217,15 +217,20 @@ class CharacterBuilder {
         particleSystem.maxSize = config.maxSize;
         particleSystem.minLifeTime = config.minLifeTime;
         particleSystem.maxLifeTime = config.maxLifeTime;
-        particleSystem.emitRate = config.emitRate;
+        particleSystem.emitRate = 200; // Increased for more dramatic effect
         
         particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
-        particleSystem.gravity = new BABYLON.Vector3(0, 3, 0);
-        particleSystem.direction1 = new BABYLON.Vector3(-1, 5, -1);
-        particleSystem.direction2 = new BABYLON.Vector3(1, 5, 1);
-        particleSystem.minEmitPower = 0.8;
-        particleSystem.maxEmitPower = 1.5;
-        particleSystem.updateSpeed = 0.008;
+        particleSystem.gravity = new BABYLON.Vector3(0, 4, 0);
+        particleSystem.direction1 = new BABYLON.Vector3(-1.5, 6, -1.5);
+        particleSystem.direction2 = new BABYLON.Vector3(1.5, 6, 1.5);
+        particleSystem.minEmitPower = 1.2;
+        particleSystem.maxEmitPower = 2.0;
+        particleSystem.updateSpeed = 0.006;
+        
+        // Add performance-based particle scaling
+        particleSystem.startSizeFunction = () => {
+            return config.minSize + Math.random() * (config.maxSize - config.minSize);
+        };
         
         particleSystem.start();
         return particleSystem;

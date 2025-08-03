@@ -3,21 +3,77 @@ class AIController {
     constructor() {
         this.config = DEVIL_IMP_CONFIG.ai;
         this.state = {
-            mood: 'mischievous',
-            activity: 'observing',
+            mood: 'showoff', // Start in performance mode
+            activity: 'greeting_audience',
             timers: {
                 activity: 0,
                 speak: 0,
                 blink: 0,
                 moodChange: 0,
-                viewportInteraction: 0
+                viewportInteraction: 0,
+                performanceTrick: 0,
+                fourthWallBreak: 0,
+                audienceEngagement: 0
             },
             targetPosition: null,
-            isPerforming: false
+            isPerforming: false,
+            currentTrick: null,
+            performanceLevel: 1, // Escalates over time
+            audienceAttention: 100, // Decreases without engagement
+            lastPerformanceType: null
         };
         
-        // Enhanced speech system without mouse references
+        // Enhanced speech system with fourth-wall breaking and performance focus
         this.phrases = {
+            showoff: {
+                greeting_audience: [
+                    "Well, well! Look who's watching!", 
+                    "Ah, an audience! Perfect timing!", 
+                    "Welcome to the show, dear viewer!", 
+                    "You've stumbled into my spotlight!",
+                    "Ready for some REAL entertainment?"
+                ],
+                fourth_wall_break: [
+                    "Yes, YOU! Behind that screen!", 
+                    "I can sense your eyes upon me...", 
+                    "Don't think I can't see you watching!", 
+                    "Are you enjoying the performance?",
+                    "This screen won't hide you from me!",
+                    "You thought this was just a program?",
+                    "I'm more real than you think!",
+                    "Surprised I noticed you there?"
+                ],
+                performance_trick: [
+                    "Watch THIS spectacular feat!", 
+                    "Prepare to be AMAZED!", 
+                    "I'll show you something incredible!", 
+                    "Behold my supernatural talents!",
+                    "This will blow your mind!",
+                    "Have you EVER seen anything like this?",
+                    "Time for the main event!",
+                    "Let me dazzle you with my powers!"
+                ],
+                audience_engagement: [
+                    "Are you still there? Don't leave!", 
+                    "I perform better with an audience!", 
+                    "Your attention feeds my power!", 
+                    "Don't look away now!",
+                    "Stay and watch the show!",
+                    "I have so much more to show you!",
+                    "You're the best audience I've had!",
+                    "Please, enjoy my performance!"
+                ],
+                showboating: [
+                    "Pretty impressive, right?", 
+                    "I bet you've never seen THAT before!", 
+                    "Did you see how smoothly I did that?", 
+                    "I'm quite the performer, aren't I?",
+                    "Not bad for a digital demon!",
+                    "Top that, other programs!",
+                    "I'm the star of this show!",
+                    "Magnificent, wouldn't you say?"
+                ]
+            },
             mischievous: {
                 greeting: [
                     "Hehehe... another soul to torment!", 
@@ -141,8 +197,12 @@ class AIController {
             this.state.timers[timer] += deltaTime;
         });
         
+        // Audience attention naturally decreases over time
+        this.state.audienceAttention = Math.max(0, this.state.audienceAttention - deltaTime * 2);
+        
         this.updateMood();
         this.updateActivity();
+        this.updatePerformanceBehavior();
         this.updateViewportInteraction();
     }
     
@@ -316,6 +376,163 @@ class AIController {
     
     getMovementSpeed() {
         return this.state.activity === 'viewport_interaction' ? 4 : this.config.movement.speed;
+    }
+    
+    updatePerformanceBehavior() {
+        // Fourth wall breaking behavior
+        if (this.state.timers.fourthWallBreak > 8 + Math.random() * 12) {
+            this.triggerFourthWallBreak();
+            this.state.timers.fourthWallBreak = 0;
+        }
+        
+        // Performance tricks
+        if (this.state.timers.performanceTrick > 6 + Math.random() * 8) {
+            this.triggerPerformanceTrick();
+            this.state.timers.performanceTrick = 0;
+        }
+        
+        // Audience engagement checks
+        if (this.state.timers.audienceEngagement > 15) {
+            if (this.state.audienceAttention < 30) {
+                this.triggerAudienceEngagement();
+            }
+            this.state.timers.audienceEngagement = 0;
+        }
+        
+        // Performance level escalation
+        if (this.state.audienceAttention > 80) {
+            this.state.performanceLevel = Math.min(5, this.state.performanceLevel + 0.01);
+        }
+    }
+    
+    triggerFourthWallBreak() {
+        this.state.currentTrick = 'fourth_wall_break';
+        this.state.activity = 'fourth_wall_break';
+        this.state.audienceAttention = Math.min(100, this.state.audienceAttention + 25);
+        
+        // Look directly at camera/viewer
+        this.state.targetPosition = new BABYLON.Vector3(0, 0, -2);
+    }
+    
+    triggerPerformanceTrick() {
+        const tricks = ['magic_pose', 'spin_dance', 'levitation', 'fire_display', 'dramatic_bow'];
+        this.state.currentTrick = tricks[Math.floor(Math.random() * tricks.length)];
+        this.state.activity = 'performance_trick';
+        this.state.lastPerformanceType = this.state.currentTrick;
+        this.state.audienceAttention = Math.min(100, this.state.audienceAttention + 15);
+        this.state.isPerforming = true;
+    }
+    
+    triggerAudienceEngagement() {
+        this.state.activity = 'audience_engagement';
+        this.state.currentTrick = 'attention_seeking';
+        this.state.audienceAttention = Math.min(100, this.state.audienceAttention + 20);
+        
+        // Move closer to viewer
+        this.state.targetPosition = new BABYLON.Vector3(0, 0, -1);
+    }
+    
+    // Enhanced activity changes with performance focus
+    changeActivity() {
+        const currentActivity = this.state.activity;
+        
+        // Higher chance of performance activities in showoff mood
+        if (this.state.mood === 'showoff') {
+            const performanceActivities = ['performance_trick', 'fourth_wall_break', 'audience_engagement', 'showboating'];
+            if (Math.random() < 0.7) {
+                this.state.activity = performanceActivities[Math.floor(Math.random() * performanceActivities.length)];
+                this.triggerPerformanceTrick();
+                return;
+            }
+        }
+        
+        switch (currentActivity) {
+            case 'greeting_audience':
+                this.state.activity = 'fourth_wall_break';
+                this.triggerFourthWallBreak();
+                break;
+                
+            case 'fourth_wall_break':
+                this.state.activity = 'performance_trick';
+                this.triggerPerformanceTrick();
+                break;
+                
+            case 'performance_trick':
+                this.state.activity = Math.random() < 0.6 ? 'showboating' : 'audience_engagement';
+                this.state.isPerforming = false;
+                break;
+                
+            case 'showboating':
+                this.state.activity = 'performance_trick';
+                this.triggerPerformanceTrick();
+                break;
+                
+            case 'audience_engagement':
+                this.state.activity = 'performance_trick';
+                this.triggerPerformanceTrick();
+                break;
+                
+            case 'observing':
+                if (Math.random() < 0.7) {
+                    this.state.activity = 'fourth_wall_break';
+                    this.triggerFourthWallBreak();
+                } else {
+                    this.state.activity = 'prowling';
+                    this.setRandomProwlTarget();
+                }
+                break;
+                
+            case 'prowling':
+                this.state.activity = 'performance_trick';
+                this.triggerPerformanceTrick();
+                break;
+                
+            case 'viewport_interaction':
+                this.state.activity = 'showboating';
+                this.state.targetPosition = new BABYLON.Vector3(0, 0, -1);
+                break;
+                
+            default:
+                this.state.activity = 'fourth_wall_break';
+                this.triggerFourthWallBreak();
+        }
+    }
+    
+    // Enhanced mood changes with performance focus
+    changeMood() {
+        const currentMood = this.state.mood;
+        let newMood;
+        
+        // Showoff mood is more likely and sticky
+        if (currentMood === 'showoff') {
+            newMood = this.weightedChoice(['showoff', 'mischievous', 'playful'], [0.6, 0.25, 0.15]);
+        } else {
+            newMood = this.weightedChoice(['showoff', 'mischievous', 'playful', 'curious'], [0.5, 0.2, 0.2, 0.1]);
+        }
+        
+        this.state.mood = newMood;
+        
+        // Reset to performance activity when entering showoff mode
+        if (newMood === 'showoff' && currentMood !== 'showoff') {
+            this.state.activity = 'greeting_audience';
+            this.state.audienceAttention = 100;
+        }
+    }
+    
+    getCurrentTrick() {
+        return this.state.currentTrick;
+    }
+    
+    getPerformanceLevel() {
+        return this.state.performanceLevel;
+    }
+    
+    isLookingAtViewer() {
+        return ['fourth_wall_break', 'audience_engagement', 'greeting_audience'].includes(this.state.activity);
+    }
+    
+    shouldShowSpotlight() {
+        return this.state.isPerforming || this.state.activity === 'performance_trick';
     }
     
     weightedChoice(choices, weights) {

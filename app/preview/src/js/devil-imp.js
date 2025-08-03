@@ -27,9 +27,12 @@ class DevilImp {
             
             // Initial greeting after dramatic pause
             setTimeout(() => {
-                this.speak('greeting');
+                this.speak('greeting_audience');
                 this.audioManager.playDemonicEntry();
                 document.getElementById('loading').style.display = 'none';
+                
+                // Show initial performance spotlight
+                this.showSpotlight();
             }, 2000);
             
         } catch (error) {
@@ -199,15 +202,42 @@ class DevilImp {
         
         const aiState = this.aiController.state;
         
-        // Floating animation
-        const floatIntensity = this.aiController.getFloatIntensity();
+        // Enhanced floating animation based on performance level
+        const baseFloatIntensity = this.aiController.getFloatIntensity();
+        const performanceMultiplier = 1 + (this.aiController.getPerformanceLevel() - 1) * 0.3;
+        const floatIntensity = baseFloatIntensity * performanceMultiplier;
         this.characterParts.root.position.y = 0.1 + Math.sin(this.time * 1.5) * floatIntensity;
         
-        // Mood-based arm animations
-        const armSpeed = this.aiController.getArmSpeed();
+        // Fourth wall breaking - look directly at viewer
+        if (this.aiController.isLookingAtViewer()) {
+            if (this.characterParts.head) {
+                // Head tracks towards viewer/camera
+                const targetRotY = Math.sin(this.time * 0.5) * 0.1; // Subtle head movement
+                const targetRotX = -0.1; // Slight downward angle to "look" at viewer
+                this.characterParts.head.rotation.y = BABYLON.Scalar.Lerp(this.characterParts.head.rotation.y, targetRotY, deltaTime * 2);
+                this.characterParts.head.rotation.x = BABYLON.Scalar.Lerp(this.characterParts.head.rotation.x, targetRotX, deltaTime * 2);
+            }
+        }
+        
+        // Performance trick animations
+        this.updatePerformanceTrickAnimations(deltaTime);
+        
+        // Enhanced arm animations based on activity
+        const armSpeed = this.getPerformanceArmSpeed();
         if (this.characterParts.leftArm && this.characterParts.rightArm) {
-            this.characterParts.leftArm.rotation.z = 0.6 + Math.sin(this.time * armSpeed) * 0.4;
-            this.characterParts.rightArm.rotation.z = -0.6 - Math.sin(this.time * armSpeed) * 0.4;
+            if (aiState.activity === 'performance_trick') {
+                // Dramatic performance gestures
+                this.characterParts.leftArm.rotation.z = 0.2 + Math.sin(this.time * armSpeed) * 0.8;
+                this.characterParts.rightArm.rotation.z = -0.2 - Math.sin(this.time * armSpeed + Math.PI) * 0.8;
+            } else if (aiState.activity === 'fourth_wall_break') {
+                // Pointing and gesturing at viewer
+                this.characterParts.leftArm.rotation.z = 0.3 + Math.sin(this.time * 3) * 0.2;
+                this.characterParts.rightArm.rotation.z = -0.8; // Pointing gesture
+            } else {
+                // Regular arm movement
+                this.characterParts.leftArm.rotation.z = 0.6 + Math.sin(this.time * armSpeed) * 0.4;
+                this.characterParts.rightArm.rotation.z = -0.6 - Math.sin(this.time * armSpeed) * 0.4;
+            }
         }
         
         // Tail animation
@@ -269,6 +299,72 @@ class DevilImp {
         }
     }
     
+    updatePerformanceTrickAnimations(deltaTime) {
+        const currentTrick = this.aiController.getCurrentTrick();
+        const aiState = this.aiController.state;
+        
+        if (!currentTrick || !this.characterParts.root) return;
+        
+        switch (currentTrick) {
+            case 'spin_dance':
+                this.characterParts.root.rotation.y += deltaTime * 3;
+                break;
+                
+            case 'levitation':
+                this.characterParts.root.position.y += Math.sin(this.time * 4) * 0.2;
+                break;
+                
+            case 'magic_pose':
+                if (this.characterParts.leftArm && this.characterParts.rightArm) {
+                    this.characterParts.leftArm.rotation.z = -1.2;
+                    this.characterParts.rightArm.rotation.z = 1.2;
+                    this.characterParts.leftArm.rotation.x = Math.sin(this.time * 5) * 0.3;
+                    this.characterParts.rightArm.rotation.x = Math.sin(this.time * 5) * 0.3;
+                }
+                break;
+                
+            case 'dramatic_bow':
+                if (this.characterParts.body) {
+                    this.characterParts.body.rotation.x = Math.sin(this.time * 2) * 0.4 - 0.3;
+                }
+                if (this.characterParts.head) {
+                    this.characterParts.head.rotation.x = Math.sin(this.time * 2) * 0.2 - 0.5;
+                }
+                break;
+                
+            case 'fire_display':
+                // Enhanced particle effects handled in updateLighting
+                break;
+        }
+    }
+    
+    getPerformanceArmSpeed() {
+        const aiState = this.aiController.state;
+        const baseSpeed = this.aiController.getArmSpeed();
+        
+        if (aiState.activity === 'performance_trick') {
+            return baseSpeed * 1.5;
+        } else if (aiState.activity === 'fourth_wall_break') {
+            return baseSpeed * 0.8;
+        }
+        
+        return baseSpeed;
+    }
+    
+    showSpotlight() {
+        const spotlight = document.getElementById('performanceSpotlight');
+        if (spotlight) {
+            spotlight.style.display = 'block';
+        }
+    }
+    
+    hideSpotlight() {
+        const spotlight = document.getElementById('performanceSpotlight');
+        if (spotlight) {
+            spotlight.style.display = 'none';
+        }
+    }
+    
     updateLighting() {
         // Fire light flicker based on mood
         const fireLight = this.scene.getLightByName("fire");
@@ -288,9 +384,33 @@ class DevilImp {
             // Update AI behavior
             this.aiController.update(deltaTime);
             
-            // Handle speech
+            // Handle speech with performance categories
             if (this.aiController.shouldSpeak()) {
-                this.speak('observing');
+                const aiState = this.aiController.state;
+                let speechCategory = 'observing';
+                
+                // Choose speech category based on current activity
+                switch (aiState.activity) {
+                    case 'fourth_wall_break':
+                        speechCategory = 'fourth_wall_break';
+                        break;
+                    case 'performance_trick':
+                        speechCategory = 'performance_trick';
+                        break;
+                    case 'audience_engagement':
+                        speechCategory = 'audience_engagement';
+                        break;
+                    case 'showboating':
+                        speechCategory = 'showboating';
+                        break;
+                    case 'greeting_audience':
+                        speechCategory = 'greeting_audience';
+                        break;
+                    default:
+                        speechCategory = 'observing';
+                }
+                
+                this.speak(speechCategory);
                 this.audioManager.playCackle();
                 this.aiController.resetSpeechTimer();
             }
@@ -307,6 +427,13 @@ class DevilImp {
                     this.speak('viewport_interaction');
                     this.audioManager.playViewportAttack();
                 }
+            }
+            
+            // Handle spotlight visibility
+            if (this.aiController.shouldShowSpotlight()) {
+                this.showSpotlight();
+            } else {
+                this.hideSpotlight();
             }
             
             // Update animations and lighting
@@ -330,7 +457,7 @@ class DevilImp {
         if (debugElement) {
             const aiState = this.aiController.state;
             debugElement.innerHTML = 
-                `FPS: ${this.engine.getFps().toFixed(0)} | Mood: ${aiState.mood} | Activity: ${aiState.activity}`;
+                `FPS: ${this.engine.getFps().toFixed(0)} | Mood: ${aiState.mood} | Activity: ${aiState.activity} | Performance: ${aiState.performanceLevel.toFixed(1)} | Attention: ${aiState.audienceAttention.toFixed(0)}%`;
         }
     }
 }
