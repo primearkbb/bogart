@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Production Deployment Check</title>
+    <style>
+        body { font-family: monospace; background: #000; color: #0f0; padding: 20px; }
+        .pass { color: #0f0; }
+        .fail { color: #f00; }
+        .warn { color: #ff0; }
+        h1 { color: #00f; }
+        .result { margin: 10px 0; padding: 5px; border-left: 3px solid; }
+        .result.pass { border-color: #0f0; }
+        .result.fail { border-color: #f00; }
+        .result.warn { border-color: #ff0; }
+    </style>
+</head>
+<body>
+    <h1>🚀 PRODUCTION DEPLOYMENT CHECK</h1>
+    <div id="results"></div>
+    <div id="deploy-button" style="margin-top: 20px;"></div>
+
+    <script>
+        // Production deployment checker
+        const results = document.getElementById('results');
+        const deployButton = document.getElementById('deploy-button');
+        let allPassed = true;
+
+        function addResult(message, status) {
+            const div = document.createElement('div');
+            div.className = `result ${status}`;
+            div.innerHTML = `${status === 'pass' ? '✅' : status === 'fail' ? '❌' : '⚠️'} ${message}`;
+            results.appendChild(div);
+            if (status === 'fail') allPassed = false;
+        }
+
+        // Check 1: Required files exist
+        async function checkFiles() {
+            const requiredFiles = [
+                'js/production-fixes.js',
+                'js/config.js', 
+                'js/audio-manager.js',
+                'js/character-builder.js',
+                'js/advanced-character-builder.js',
+                'js/ai-controller.js',
+                'js/devil-imp.js',
+                'js/main.js',
+                'css/styles.css'
+            ];
+            
+            for (const file of requiredFiles) {
+                try {
+                    const response = await fetch(file, { method: 'HEAD' });
+                    if (response.ok) {
+                        addResult(`File exists: ${file}`, 'pass');
+                    } else {
+                        addResult(`Missing file: ${file}`, 'fail');
+                    }
+                } catch (e) {
+                    addResult(`Cannot access file: ${file}`, 'fail');
+                }
+            }
+        }
+
+        // Check 2: External dependencies
+        function checkDependencies() {
+            const deps = [
+                { name: 'GSAP', obj: window.gsap },
+                { name: 'Babylon.js', obj: window.BABYLON },
+                { name: 'Production Fixes', obj: window.CompatibilityChecker }
+            ];
+            
+            deps.forEach(dep => {
+                if (dep.obj) {
+                    addResult(`${dep.name} loaded successfully`, 'pass');
+                } else {
+                    addResult(`${dep.name} failed to load`, 'fail');
+                }
+            });
+        }
+
+        // Check 3: Browser compatibility
+        function checkCompatibility() {
+            if (window.CompatibilityChecker) {
+                const compat = CompatibilityChecker.check();
+                if (compat.compatible) {
+                    addResult('Browser fully compatible', 'pass');
+                } else {
+                    addResult(`Browser issues: ${compat.issues.join(', ')}`, 'fail');
+                }
+            } else {
+                addResult('Cannot check compatibility - CompatibilityChecker not loaded', 'fail');
+            }
+        }
+
+        // Check 4: Performance
+        function checkPerformance() {
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            
+            if (gl) {
+                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                if (debugInfo) {
+                    const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                    addResult(`WebGL Renderer: ${renderer}`, 'pass');
+                } else {
+                    addResult('WebGL available but limited debug info', 'warn');
+                }
+            } else {
+                addResult('WebGL not available', 'fail');
+            }
+
+            // Memory check
+            if (performance.memory) {
+                const memMB = performance.memory.usedJSHeapSize / 1024 / 1024;
+                if (memMB < 50) {
+                    addResult(`Memory usage: ${memMB.toFixed(1)}MB (Good)`, 'pass');
+                } else {
+                    addResult(`Memory usage: ${memMB.toFixed(1)}MB (High)`, 'warn');
+                }
+            } else {
+                addResult('Memory monitoring not available', 'warn');
+            }
+        }
+
+        // Run all checks
+        async function runChecks() {
+            addResult('Starting production deployment checks...', 'pass');
+            
+            await checkFiles();
+            checkDependencies();
+            checkCompatibility();
+            checkPerformance();
+            
+            // Final result
+            if (allPassed) {
+                addResult('🚀 ALL CHECKS PASSED - READY FOR PRODUCTION!', 'pass');
+                deployButton.innerHTML = '<a href="index.html" style="color: #0f0; font-size: 18px; text-decoration: none; border: 2px solid #0f0; padding: 10px 20px; display: inline-block;">▶️ LAUNCH PRODUCTION APP</a>';
+            } else {
+                addResult('❌ SOME CHECKS FAILED - FIX ISSUES BEFORE DEPLOYMENT', 'fail');
+                deployButton.innerHTML = '<span style="color: #f00; font-size: 18px;">❌ NOT READY FOR PRODUCTION</span>';
+            }
+        }
+
+        // Load required scripts and run checks
+        const scripts = [
+            'js/production-fixes.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js',
+            'https://cdn.babylonjs.com/babylon.js'
+        ];
+
+        let scriptsLoaded = 0;
+        scripts.forEach(src => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = () => {
+                scriptsLoaded++;
+                if (scriptsLoaded === scripts.length) {
+                    setTimeout(runChecks, 100); // Small delay to ensure everything is loaded
+                }
+            };
+            script.onerror = () => {
+                addResult(`Failed to load: ${src}`, 'fail');
+                scriptsLoaded++;
+                if (scriptsLoaded === scripts.length) {
+                    setTimeout(runChecks, 100);
+                }
+            };
+            document.head.appendChild(script);
+        });
+    </script>
+</body>
+</html>

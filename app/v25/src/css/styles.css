@@ -1,0 +1,241 @@
+@import url('https://fonts.googleapis.com/css2?family=Creepster&family=Nosifer&family=Metal+Mania&display=swap');
+
+html, body {
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Creepster', cursive, Arial, sans-serif;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(255, 0, 0, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 100, 0, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(139, 0, 139, 0.05) 0%, transparent 50%),
+        radial-gradient(circle, #1a0505, #000);
+    animation: backgroundShift 20s ease-in-out infinite alternate;
+}
+
+@keyframes backgroundShift {
+    0% { filter: hue-rotate(0deg) brightness(1); }
+    100% { filter: hue-rotate(30deg) brightness(1.1); }
+}
+
+#renderCanvas {
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+}
+
+#info {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: #ff6666;
+    background: rgba(0,0,0,0.8);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    z-index: 100;
+    border: 1px solid #ff3333;
+    transition: all 0.3s ease;
+}
+
+#info:hover {
+    background: rgba(255,51,51,0.2);
+    transform: scale(1.05);
+}
+
+#speechBubble {
+    position: absolute;
+    background: 
+        linear-gradient(135deg, #ff1100, #cc0000, #aa0000),
+        radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 70%);
+    border-radius: 25px;
+    padding: 18px 25px;
+    font-size: 18px;
+    font-family: 'Metal Mania', cursive;
+    color: #fff;
+    box-shadow: 
+        0 0 20px rgba(255,51,51,0.8),
+        0 8px 16px rgba(255,51,51,0.4), 
+        inset 0 2px 0 rgba(255,255,255,0.3),
+        inset 0 -2px 0 rgba(0,0,0,0.3);
+    max-width: 320px;
+    text-align: center;
+    font-weight: bold;
+    display: none;
+    z-index: 100;
+    border: 3px solid #ff4444;
+    animation: dramaticPulse 1.5s infinite ease-in-out;
+    text-shadow: 
+        2px 2px 4px rgba(0,0,0,0.8),
+        0 0 8px rgba(255,100,100,0.6);
+    transform-origin: center bottom;
+}
+
+@keyframes dramaticPulse {
+    0%, 100% { 
+        transform: scale(1) rotate(0deg); 
+        box-shadow: 
+            0 0 20px rgba(255,51,51,0.8),
+            0 8px 16px rgba(255,51,51,0.4), 
+            inset 0 2px 0 rgba(255,255,255,0.3);
+    }
+    50% { 
+        transform: scale(1.08) rotate(1deg); 
+        box-shadow: 
+            0 0 30px rgba(255,51,51,1),
+            0 12px 24px rgba(255,51,51,0.6), 
+            inset 0 2px 0 rgba(255,255,255,0.4);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+#speechBubble::after {
+    content: '';
+    position: absolute;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 12px solid transparent;
+    border-right: 12px solid transparent;
+    border-top: 12px solid #ff3333;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+}
+
+#debug {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    color: #ff9999;
+    background: rgba(0,0,0,0.8);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    z-index: 100;
+    border: 1px solid #663333;
+}
+
+#loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #ff4444;
+    font-size: 28px;
+    font-family: 'Nosifer', cursive;
+    z-index: 200;
+    text-shadow: 
+        0 0 10px #ff3333,
+        0 0 20px #ff6666,
+        2px 2px 4px rgba(0,0,0,0.8);
+    animation: dramaticFlicker 2s infinite;
+}
+
+@keyframes dramaticFlicker {
+    0%, 18%, 22%, 25%, 53%, 57%, 100% {
+        opacity: 1;
+        text-shadow: 
+            0 0 15px #ff3333,
+            0 0 25px #ff6666,
+            0 0 35px #ff9999,
+            2px 2px 4px rgba(0,0,0,0.8);
+        transform: translate(-50%, -50%) scale(1);
+    }
+    20%, 24%, 55% {
+        opacity: 0.4;
+        text-shadow: 
+            0 0 5px #ff3333,
+            2px 2px 4px rgba(0,0,0,0.8);
+        transform: translate(-50%, -50%) scale(0.98);
+    }
+}
+
+@keyframes flicker {
+    0% { opacity: 0.8; text-shadow: 0 0 10px #ff3333; }
+    100% { opacity: 1; text-shadow: 0 0 20px #ff3333, 0 0 30px #ff6666; }
+}
+
+#vignette {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 30% 20%, rgba(255,0,0,0.03) 0%, transparent 40%),
+        radial-gradient(circle at 70% 80%, rgba(255,100,0,0.02) 0%, transparent 40%),
+        radial-gradient(circle, transparent 50%, rgba(0,0,0,0.6) 85%, rgba(0,0,0,0.9) 100%);
+    pointer-events: none;
+    z-index: 50;
+    animation: vignetteShift 25s ease-in-out infinite alternate;
+}
+
+@keyframes vignetteShift {
+    0% { 
+        opacity: 0.8;
+        background: 
+            radial-gradient(circle at 30% 20%, rgba(255,0,0,0.03) 0%, transparent 40%),
+            radial-gradient(circle at 70% 80%, rgba(255,100,0,0.02) 0%, transparent 40%),
+            radial-gradient(circle, transparent 50%, rgba(0,0,0,0.6) 85%, rgba(0,0,0,0.9) 100%);
+    }
+    100% { 
+        opacity: 1;
+        background: 
+            radial-gradient(circle at 70% 30%, rgba(255,0,0,0.04) 0%, transparent 45%),
+            radial-gradient(circle at 20% 70%, rgba(255,150,0,0.03) 0%, transparent 45%),
+            radial-gradient(circle, transparent 45%, rgba(0,0,0,0.7) 80%, rgba(0,0,0,0.95) 100%);
+    }
+}
+
+/* New dramatic overlay effects */
+#fireOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 20% 90%, rgba(255,100,0,0.1) 0%, transparent 30%),
+        radial-gradient(circle at 80% 10%, rgba(255,0,50,0.08) 0%, transparent 35%);
+    pointer-events: none;
+    z-index: 40;
+    animation: fireShimmer 8s ease-in-out infinite alternate;
+}
+
+@keyframes fireShimmer {
+    0% { opacity: 0.3; transform: scale(1); }
+    100% { opacity: 0.6; transform: scale(1.02); }
+}
+
+#performanceSpotlight {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 45;
+    display: none;
+    animation: spotlightPulse 3s ease-in-out infinite;
+}
+
+@keyframes spotlightPulse {
+    0%, 100% { 
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.3;
+    }
+    50% { 
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 0.6;
+    }
+}
