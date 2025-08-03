@@ -40,9 +40,9 @@ class AudioManager {
                 const arrayBuffer = await response.arrayBuffer();
                 const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
                 this.audioBuffers.set(key, audioBuffer);
-                console.log(`Loaded audio: ${key}`);
+                // Audio loaded successfully
             } catch (error) {
-                console.warn(`Failed to load audio file ${key}:`, error);
+                // Failed to load audio file - silently fail in production
             }
         });
         
@@ -51,7 +51,7 @@ class AudioManager {
 
     playAudioFile(key, volume = 1.0) {
         if (!this.isReady() || !this.audioBuffers.has(key)) {
-            console.warn(`Audio not ready or file not found: ${key}`);
+            // Audio not ready or file not found - silently fail in production
             return;
         }
 

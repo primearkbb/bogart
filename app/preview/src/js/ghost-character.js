@@ -1,3 +1,87 @@
+// Resource cleanup manager
+class ResourceManager {
+    constructor() {
+        this.resources = new Set();
+        this.intervals = new Set();
+        this.timeouts = new Set();
+        this.eventListeners = new Map();
+    }
+    
+    addResource(resource) {
+        this.resources.add(resource);
+    }
+    
+    addInterval(id) {
+        this.intervals.add(id);
+    }
+    
+    addTimeout(id) {
+    }
+    
+    addEventListener(element, event, handler) {
+        if (!this.eventListeners.has(element)) {
+            this.eventListeners.set(element, []);
+        }
+        this.eventListeners.get(element).push({ event, handler });
+    }
+    
+    cleanup() {
+        this.intervals.forEach(id => clearInterval(id));
+        this.intervals.clear();
+        
+        this.timeouts.forEach(id => clearTimeout(id));
+        this.timeouts.clear();
+        
+        this.eventListeners.forEach((listeners, element) => {
+            listeners.forEach(({ event, handler }) => {
+                element.removeEventListener(event, handler);
+            });
+        });
+        this.eventListeners.clear();
+        
+        this.resources.forEach(resource => {
+            if (resource && typeof resource.dispose === 'function') {
+                resource.dispose();
+            }
+        });
+        this.resources.clear();
+    }
+}
+
+// Performance monitor
+class PerformanceMonitor {
+    constructor() {
+        this.metrics = {
+            fps: 0,
+            memory: 0,
+            renderTime: 0
+        };
+        this.startTime = performance.now();
+    }
+    
+    update(engine) {
+        if (engine) {
+            this.metrics.fps = engine.getFps();
+        }
+        
+        if (performance.memory) {
+            this.metrics.memory = performance.memory.usedJSHeapSize / 1024 / 1024;
+        }
+        
+        if (this.metrics.fps < 30) {
+            // Low FPS detected - performance adjustments needed
+        }
+        
+        if (this.metrics.memory > 100) {
+            // High memory usage detected - cleanup needed
+        }
+    }
+    
+    getMetrics() {
+        return { ...this.metrics };
+    }
+}
+
 // Main Ghost Character class that orchestrates all components
 class GhostCharacter {
     constructor() {
@@ -14,14 +98,29 @@ class GhostCharacter {
         this.aiController = new AIController();
         this.characterBuilder = null;
         this.advancedCharacterBuilder = null;
-        
-        // Resource management
         this.resourceManager = new ResourceManager();
         this.performanceMonitor = new PerformanceMonitor();
-        this.timeouts = new Set();
+        
+        // Performance optimization flags
+        this.performanceMode = 'auto'; // auto, low, high
+        this.lowPerformanceMode = false;
         
         // Render loop time tracking
         this.time = 0;
+    }
+    
+    // Helper method to track timeouts
+    setTrackedTimeout(callback, delay) {
+        const id = setTimeout(callback, delay);
+        this.resourceManager.addTimeout(id);
+        return id;
+    }
+    
+    // Helper method to track intervals
+    setTrackedInterval(callback, delay) {
+        const id = setInterval(callback, delay);
+        this.resourceManager.addInterval(id);
+        return id;
     }
     
     async init() {
@@ -32,11 +131,11 @@ class GhostCharacter {
             this.startRenderLoop();
             
             // Initial ethereal greeting after dramatic pause
-            const greetingTimeout = setTimeout(() => {
+            const greetingTimeout = this.setTrackedTimeout(() => {
                 this.speak('greeting_audience');
                 this.audioManager.playEtherealEntry();
                 // Play welcome voice line
-                setTimeout(() => {
+                const welcomeTimeout = this.setTrackedTimeout(() => {
                     this.audioManager.playGhostWelcome();
                 }, 1000);
                 const loadingEl = document.getElementById('loading');
@@ -45,7 +144,6 @@ class GhostCharacter {
                 // Show initial performance spotlight
                 this.showSpotlight();
             }, 2000);
-            this.timeouts.add(greetingTimeout);
             
         } catch (error) {
             console.error("Failed to initialize Ghost Character:", error);
@@ -67,8 +165,8 @@ class GhostCharacter {
             const speechBubble = document.getElementById('speechBubble');
             if (speechBubble && speechBubble.style.display !== 'none') {
                 // Small delay to ensure viewport dimensions are updated
-                setTimeout(() => this.positionSpeechBubble(), 100);
-            }
+                const resizeTimeout = setTimeout(() => this.positionSpeechBubble(), 100);
+                }
         };
         
         window.addEventListener("resize", handleViewportChange);
@@ -106,7 +204,7 @@ class GhostCharacter {
             this.characterMaterials = characterData.materials;
             this.isAdvancedCharacter = true;
         } catch (error) {
-            console.warn("Advanced character failed, using fallback:", error);
+            // Advanced character failed, using fallback - silently continue
             // Fallback to basic character
             this.characterBuilder = new CharacterBuilder(this.scene);
             const characterData = this.characterBuilder.createCharacter();
@@ -249,7 +347,6 @@ class GhostCharacter {
                     this.characterParts.rightEye.scaling.y = 1;
                 }
             }, 200); // Slightly longer blink for ghostly effect
-            this.timeouts.add(blinkTimeout);
         }
     }
     
@@ -328,18 +425,12 @@ class GhostCharacter {
             }
         }
         
-        // Advanced ghostly tail animation
-        if (this.characterParts.tail && this.characterParts.tail.joints) {
-            // Advanced tail uses joint-based animation
-            // This is handled automatically by the GSAP animations in setupIdleAnimations
-        } else if (this.characterParts.ghostTail) {
-            // Fallback for basic ghostly tail animation
-            this.characterParts.ghostTail.forEach((segment, i) => {
-                segment.position.x = Math.sin(this.time * 1.5 + i * 0.5) * 0.08;
-                segment.rotation.z = Math.sin(this.time * 1.2 + i * 0.3) * 0.15;
-                // Add gentle vertical undulation
-                segment.position.y += Math.sin(this.time * 0.8 + i * 0.4) * 0.02;
-            });
+        // Simple wavy bottom animation for the simplified ghost body
+        if (this.characterParts.body) {
+            // Add subtle body wave animation to enhance the wavy bottom effect
+            const waveTime = this.time * 2.0;
+            this.characterParts.body.rotation.z = Math.sin(waveTime) * 0.03;
+            this.characterParts.body.rotation.x = Math.sin(waveTime * 0.7) * 0.02;
         }
         
         // Character movement removed - character now stays stationary in viewport center
@@ -458,8 +549,9 @@ class GhostCharacter {
             // Update AI behavior
             this.aiController.update(deltaTime);
             
-            // Update performance monitoring
+            // Update performance monitoring and adjust quality if needed
             this.performanceMonitor.update(this.engine);
+            this.adjustPerformanceIfNeeded();
             
             // Handle speech with performance categories
             if (this.aiController.shouldSpeak()) {
@@ -472,7 +564,7 @@ class GhostCharacter {
                         speechCategory = 'fourth_wall_break';
                         // Play sensing voice line occasionally
                         if (Math.random() < 0.3) {
-                            setTimeout(() => this.audioManager.playGhostSensing(), 500);
+                            const sensingTimeout = setTimeout(() => this.audioManager.playGhostSensing(), 500);
                         }
                         break;
                     case 'performance_trick':
@@ -480,21 +572,21 @@ class GhostCharacter {
                         // Play performance or magic voice line
                         if (Math.random() < 0.4) {
                             const voiceLine = Math.random() < 0.5 ? 'playGhostPerformance' : 'playGhostMagic';
-                            setTimeout(() => this.audioManager[voiceLine](), 500);
+                            const performanceTimeout = setTimeout(() => this.audioManager[voiceLine](), 500);
                         }
                         break;
                     case 'audience_engagement':
                         speechCategory = 'audience_engagement';
                         // Play friendly voice line
                         if (Math.random() < 0.3) {
-                            setTimeout(() => this.audioManager.playGhostFriendly(), 500);
+                            const friendlyTimeout = setTimeout(() => this.audioManager.playGhostFriendly(), 500);
                         }
                         break;
                     case 'showing_off':
                         speechCategory = 'showing_off';
                         // Play magic voice line
                         if (Math.random() < 0.3) {
-                            setTimeout(() => this.audioManager.playGhostMagic(), 500);
+                            const magicTimeout = setTimeout(() => this.audioManager.playGhostMagic(), 500);
                         }
                         break;
                     case 'greeting_audience':
@@ -504,7 +596,7 @@ class GhostCharacter {
                         speechCategory = 'observing';
                         // Occasionally play ambient sounds
                         if (Math.random() < 0.1) {
-                            setTimeout(() => this.audioManager.playRandomAmbientSound(), 1000);
+                            const ambientTimeout = setTimeout(() => this.audioManager.playRandomAmbientSound(), 1000);
                         }
                 }
                 
@@ -526,7 +618,7 @@ class GhostCharacter {
                     this.audioManager.playPhaseShift();
                     // Add eerie sound effects during phase interactions
                     if (Math.random() < 0.5) {
-                        setTimeout(() => this.audioManager.playGhostWind(), 200);
+                        const windTimeout = setTimeout(() => this.audioManager.playGhostWind(), 200);
                     }
                 }
             }
@@ -554,21 +646,58 @@ class GhostCharacter {
         });
     }
     
+    adjustPerformanceIfNeeded() {
+        const metrics = this.performanceMonitor.getMetrics();
+        
+        // Switch to low performance mode if FPS is consistently low
+        if (metrics.fps < 25 && !this.lowPerformanceMode) {
+            this.lowPerformanceMode = true;
+            this.enableLowPerformanceMode();
+        }
+        
+        // Switch back to normal mode if performance improves
+        if (metrics.fps > 45 && this.lowPerformanceMode) {
+            this.lowPerformanceMode = false;
+            this.disableLowPerformanceMode();
+        }
+    }
+    
+    enableLowPerformanceMode() {
+        // Reduce animation frequency
+        if (this.particleSystem) {
+            this.particleSystem.emitRate *= 0.5;
+        }
+        
+        // Reduce render resolution if needed
+        if (this.engine && this.engine.getHardwareScalingLevel() === 1) {
+            this.engine.setHardwareScalingLevel(1.5);
+        }
+    }
+    
+    disableLowPerformanceMode() {
+        // Restore normal animation frequency
+        if (this.particleSystem) {
+            this.particleSystem.emitRate *= 2;
+        }
+        
+        // Restore normal render resolution
+        if (this.engine && this.engine.getHardwareScalingLevel() > 1) {
+            this.engine.setHardwareScalingLevel(1);
+        }
+    }
+    
     updateDebugInfo() {
         const debugElement = document.getElementById('debug');
         if (debugElement) {
             const aiState = this.aiController.state;
+            const perfMode = this.lowPerformanceMode ? ' (Low Perf)' : '';
             debugElement.innerHTML = 
-                `FPS: ${this.engine.getFps().toFixed(0)} | Mood: ${aiState.mood} | Activity: ${aiState.activity} | Performance: ${aiState.performanceLevel.toFixed(1)} | Attention: ${aiState.audienceAttention.toFixed(0)}%`;
+                `FPS: ${this.engine.getFps().toFixed(0)} | Mood: ${aiState.mood} | Activity: ${aiState.activity} | Performance: ${aiState.performanceLevel.toFixed(1)} | Attention: ${aiState.audienceAttention.toFixed(0)}%${perfMode}`;
         }
     }
     
     dispose() {
-        // Clear all timeouts
-        this.timeouts.forEach(id => clearTimeout(id));
-        this.timeouts.clear();
-        
-        // Cleanup resource manager
+        // Cleanup resource manager (handles timeouts, intervals, etc.)
         if (this.resourceManager) {
             this.resourceManager.cleanup();
         }
@@ -582,6 +711,17 @@ class GhostCharacter {
         if (this.particleSystem) {
             this.particleSystem.dispose();
         }
+        
+        // Cleanup audio manager
+        if (this.audioManager) {
+            // Stop any ongoing audio
+            if (this.audioManager.audioContext && this.audioManager.audioContext.state !== 'closed') {
+                this.audioManager.audioContext.close();
+            }
+        }
+        
+        // Cleanup AI controller
+        this.aiController = null;
         
         // Cleanup scene
         if (this.scene) {

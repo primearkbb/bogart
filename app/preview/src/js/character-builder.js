@@ -52,29 +52,10 @@ class CharacterBuilder {
         const ghostRoot = new BABYLON.TransformNode("ghostRoot", this.scene);
         const parts = { root: ghostRoot };
         
-        // Head (more elongated and ethereal)
-        parts.head = BABYLON.MeshBuilder.CreateSphere("head", {
-            diameter: size.headDiameter,
-            segments: 32
-        }, this.scene);
-        parts.head.position.y = 2.0;
-        parts.head.scaling.y = 1.1; // Slightly elongated
-        parts.head.material = materials.ghost;
-        parts.head.parent = ghostRoot;
-        
-        // Body (flowing, ethereal form)
-        parts.body = BABYLON.MeshBuilder.CreateSphere("body", {
-            diameter: size.bodyDiameter,
-            segments: 32
-        }, this.scene);
-        parts.body.position.y = 1;
-        parts.body.scaling.set(1.2, 1.6, 1.0); // More flowing shape
-        parts.body.material = materials.ghost;
-        parts.body.parent = ghostRoot;
-        
-        // Ethereal wispy extensions instead of horns
-        parts.leftWisp = this.createWisp("leftWisp", -0.4, 2.8, 0, materials.ghost, ghostRoot);
-        parts.rightWisp = this.createWisp("rightWisp", 0.4, 2.8, 0, materials.ghost, ghostRoot);
+        // Create simplified ghost geometry
+        const ghostGeometry = this.createSimpleGhostGeometry(materials.ghost, ghostRoot);
+        parts.head = ghostGeometry.head;
+        parts.body = ghostGeometry.body;
         
         // Eyes (larger, more ethereal)
         parts.leftEye = this.createEye("leftEye", -0.35, 2.1, 0.6, materials.eye, ghostRoot);
@@ -87,42 +68,150 @@ class CharacterBuilder {
         // Mouth (subtle, ethereal)
         parts.mouth = this.createMouth(materials.dark, ghostRoot);
         
-        // Limbs (translucent, flowing)
-        parts.leftArm = this.createArm("leftArm", -0.8, 1.4, 0.3, materials.ghost, ghostRoot);
-        parts.rightArm = this.createArm("rightArm", 0.8, 1.4, -0.3, materials.ghost, ghostRoot);
-        
-        // No legs - ghost tapers into ethereal mist
-        parts.ghostTail = this.createGhostTail(materials.ghost, ghostRoot);
+        // Simple floating arms
+        parts.leftArm = this.createSimpleArm("leftArm", -0.8, 1.4, 0.3, materials.ghost, ghostRoot);
+        parts.rightArm = this.createSimpleArm("rightArm", 0.8, 1.4, -0.3, materials.ghost, ghostRoot);
         
         return { parts, materials };
     }
     
-    createWisp(name, x, y, z, material, parent) {
-        // Create ethereal wispy extensions that float around the ghost's head
-        const wisp = BABYLON.MeshBuilder.CreateSphere(name, {
-            diameter: 0.4,
-            segments: 16
-        }, this.scene);
-        wisp.position.set(x, y, z);
-        wisp.scaling.set(0.3, 0.8, 0.3); // Elongated wispy shape
-        wisp.material = material;
-        wisp.parent = parent;
+    createSimpleGhostGeometry(material, parent) {
+        // Create a simple, clean ghost geometry with:
+        // - Semi-sphere head on top
+        // - Cylinder body 
+        // - Wavy bottom edge
         
-        // Add subtle rotation animation
-        const wisps = [wisp];
-        for (let i = 1; i < 3; i++) {
-            const childWisp = BABYLON.MeshBuilder.CreateSphere(name + "_child" + i, {
-                diameter: 0.2 - i * 0.05,
-                segments: 12
-            }, this.scene);
-            childWisp.position.set(0, i * 0.3, 0);
-            childWisp.material = material;
-            childWisp.parent = wisp;
-            wisps.push(childWisp);
+        // Head: Semi-sphere (hemisphere)
+        const head = BABYLON.MeshBuilder.CreateSphere("ghostHead", {
+            diameter: 1.4,
+            segments: 32,
+            slice: Math.PI // Only upper half (hemisphere)
+        }, this.scene);
+        head.position.y = 2.3;
+        head.material = material;
+        head.parent = parent;
+        
+        // Body: Cylinder with custom wavy bottom
+        const body = this.createWavyBottomCylinder("ghostBody", material, parent);
+        
+        return { head, body };
+    }
+    
+    createWavyBottomCylinder(name, material, parent) {
+        // Create custom geometry for cylinder with wavy bottom edge
+        const height = 2.0;
+        const radius = 0.6;
+        const segments = 32;
+        const waveAmplitude = 0.1;
+        const waveFrequency = 6;
+        
+        const positions = [];
+        const indices = [];
+        const normals = [];
+        const uvs = [];
+        
+        // Create vertices
+        // Top center vertex
+        positions.push(0, height / 2, 0);
+        normals.push(0, 1, 0);
+        uvs.push(0.5, 0.5);
+        
+        // Top ring vertices
+        for (let i = 0; i <= segments; i++) {
+            const angle = (i / segments) * Math.PI * 2;
+            const x = Math.cos(angle) * radius;
+            const z = Math.sin(angle) * radius;
+            
+            positions.push(x, height / 2, z);
+            normals.push(0, 1, 0);
+            uvs.push(0.5 + Math.cos(angle) * 0.5, 0.5 + Math.sin(angle) * 0.5);
         }
         
-        return wisp;
+        // Body vertices (straight sides)
+        for (let ring = 0; ring <= 10; ring++) {
+            const y = height / 2 - (ring / 10) * height;
+            
+            for (let i = 0; i <= segments; i++) {
+                const angle = (i / segments) * Math.PI * 2;
+                let currentRadius = radius;
+                
+                // Add wavy effect to bottom rings
+                if (ring > 7) {
+                    const waveProgress = (ring - 7) / 3; // Last 3 rings get wavy
+                    const wave = Math.sin(angle * waveFrequency) * waveAmplitude * waveProgress;
+                    currentRadius += wave;
+                }
+                
+                const x = Math.cos(angle) * currentRadius;
+                const z = Math.sin(angle) * currentRadius;
+                
+                positions.push(x, y, z);
+                
+                // Normal calculation
+                const normal = new BABYLON.Vector3(x, 0, z).normalize();
+                normals.push(normal.x, normal.y, normal.z);
+                
+                // UV coordinates
+                uvs.push(i / segments, 1 - ring / 10);
+            }
+        }
+        
+        // Create indices
+        // Top cap
+        for (let i = 0; i < segments; i++) {
+            indices.push(0, i + 1, i + 2 > segments ? 1 : i + 2);
+        }
+        
+        // Body rings
+        for (let ring = 0; ring < 10; ring++) {
+            const ringStart = 1 + segments + 1 + ring * (segments + 1);
+            const nextRingStart = ringStart + segments + 1;
+            
+            for (let i = 0; i < segments; i++) {
+                const current = ringStart + i;
+                const next = ringStart + i + 1;
+                const currentNext = nextRingStart + i;
+                const nextNext = nextRingStart + i + 1;
+                
+                // Two triangles per quad
+                indices.push(current, nextNext, next);
+                indices.push(current, currentNext, nextNext);
+            }
+        }
+        
+        // Create the mesh
+        const mesh = new BABYLON.Mesh(name, this.scene);
+        const vertexData = new BABYLON.VertexData();
+        
+        vertexData.positions = positions;
+        vertexData.indices = indices;
+        vertexData.normals = normals;
+        vertexData.uvs = uvs;
+        
+        vertexData.applyToMesh(mesh);
+        
+        mesh.position.y = 1.0;
+        mesh.material = material;
+        mesh.parent = parent;
+        
+        return mesh;
     }
+    
+    createSimpleArm(name, x, y, rotZ, material, parent) {
+        // Simple tapered cylinder for arms
+        const arm = BABYLON.MeshBuilder.CreateCylinder(name, {
+            height: 1.0,
+            diameterTop: 0.25,
+            diameterBottom: 0.15,
+            tessellation: 16
+        }, this.scene);
+        arm.position.set(x, y, 0);
+        arm.rotation.z = rotZ;
+        arm.material = material;
+        arm.parent = parent;
+        return arm;
+    }
+    
     
     createEye(name, x, y, z, material, parent) {
         const eye = BABYLON.MeshBuilder.CreateSphere(name, {
@@ -161,45 +250,6 @@ class CharacterBuilder {
         return mouth;
     }
     
-    createArm(name, x, y, rotZ, material, parent) {
-        // Ghostly arms that taper and become more ethereal
-        const arm = BABYLON.MeshBuilder.CreateCylinder(name, {
-            height: 1.2,
-            diameterTop: 0.3,
-            diameterBottom: 0.1, // Tapers to wispy end
-            tessellation: 16
-        }, this.scene);
-        arm.position.set(x, y, 0);
-        arm.rotation.z = rotZ;
-        arm.material = material;
-        arm.parent = parent;
-        return arm;
-    }
-    
-    createGhostTail(material, parent) {
-        // Ghost tapers into ethereal mist instead of having legs
-        const tailSegments = [];
-        for (let i = 0; i < 8; i++) {
-            const segment = BABYLON.MeshBuilder.CreateSphere("ghostTailSeg" + i, {
-                diameter: 1.0 - i * 0.12, // Starts wide and tapers
-                segments: 16
-            }, this.scene);
-            segment.position.set(0, 0.5 - i * 0.08, 0);
-            segment.scaling.y = 0.6 - i * 0.05; // Gets more compressed
-            segment.material = material;
-            segment.parent = parent;
-            
-            // Make lower segments more transparent
-            if (i > 3) {
-                const segmentMaterial = material.clone("ghostTailMat" + i);
-                segmentMaterial.alpha = material.alpha * (1 - i * 0.1);
-                segment.material = segmentMaterial;
-            }
-            
-            tailSegments.push(segment);
-        }
-        return tailSegments;
-    }
     
     createGround(materials) {
         const ground = BABYLON.MeshBuilder.CreateGround("ground", {

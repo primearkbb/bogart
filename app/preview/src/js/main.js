@@ -1,3 +1,52 @@
+// Browser compatibility checker
+class CompatibilityChecker {
+    static check() {
+        const issues = [];
+        
+        if (!this.checkWebGL()) {
+            issues.push('WebGL not supported');
+        }
+        
+        if (!this.checkWebAudio()) {
+            issues.push('Web Audio API not supported');
+        }
+        
+        if (!this.checkEssentialFeatures()) {
+            issues.push('Essential JavaScript features missing');
+        }
+        
+        return {
+            compatible: issues.length === 0,
+            issues
+        };
+    }
+    
+    static checkWebGL() {
+        try {
+            const canvas = document.createElement('canvas');
+            return !!(window.WebGLRenderingContext && 
+                     (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+        } catch (e) {
+            return false;
+        }
+    }
+    
+    static checkWebAudio() {
+        return !!(window.AudioContext || window.webkitAudioContext);
+    }
+    
+    static checkEssentialFeatures() {
+        return !!(
+            window.requestAnimationFrame &&
+            window.Promise &&
+            Array.prototype.forEach &&
+            Object.keys &&
+            JSON.parse &&
+            JSON.stringify
+        );
+    }
+}
+
 // Application entry point with production safeguards
 window.addEventListener('DOMContentLoaded', () => {
     // Check browser compatibility first
