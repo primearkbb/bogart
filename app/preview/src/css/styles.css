@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Creepster&display=swap');
+
+html, body {
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Creepster', cursive, Arial, sans-serif;
+    background: radial-gradient(circle, #1a0a0a, #000);
+}
+
+#renderCanvas {
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+}
+
+#info {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: #ff6666;
+    background: rgba(0,0,0,0.8);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    z-index: 100;
+    border: 1px solid #ff3333;
+    transition: all 0.3s ease;
+}
+
+#info:hover {
+    background: rgba(255,51,51,0.2);
+    transform: scale(1.05);
+}
+
+#speechBubble {
+    position: absolute;
+    background: linear-gradient(135deg, #ff3333, #cc0000);
+    border-radius: 20px;
+    padding: 15px 20px;
+    font-size: 16px;
+    color: #fff;
+    box-shadow: 0 8px 16px rgba(255,51,51,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+    max-width: 280px;
+    text-align: center;
+    font-weight: bold;
+    display: none;
+    z-index: 100;
+    border: 2px solid #ff6666;
+    animation: pulse 2s infinite ease-in-out;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+#speechBubble::after {
+    content: '';
+    position: absolute;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 12px solid transparent;
+    border-right: 12px solid transparent;
+    border-top: 12px solid #ff3333;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+}
+
+#debug {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    color: #ff9999;
+    background: rgba(0,0,0,0.8);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    z-index: 100;
+    border: 1px solid #663333;
+}
+
+#loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #ff6666;
+    font-size: 24px;
+    z-index: 200;
+    text-shadow: 0 0 10px #ff3333;
+    animation: flicker 1.5s infinite alternate;
+}
+
+@keyframes flicker {
+    0% { opacity: 0.8; text-shadow: 0 0 10px #ff3333; }
+    100% { opacity: 1; text-shadow: 0 0 20px #ff3333, 0 0 30px #ff6666; }
+}
+
+#vignette {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, transparent 60%, rgba(0,0,0,0.8) 100%);
+    pointer-events: none;
+    z-index: 50;
+}
