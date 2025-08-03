@@ -4,7 +4,7 @@ class AIController {
         this.config = DEVIL_IMP_CONFIG.ai;
         this.state = {
             mood: 'showoff', // Start in performance mode
-            activity: 'greeting_audience',
+            activity: 'fourth_wall_break', // Immediately break fourth wall to look at viewer
             timers: {
                 activity: 0,
                 speak: 0,

@@ -13,6 +13,12 @@ class DevilImp {
         this.audioManager = new AudioManager();
         this.aiController = new AIController();
         this.characterBuilder = null;
+        this.advancedCharacterBuilder = null;
+        
+        // Resource management
+        this.resourceManager = new ResourceManager();
+        this.performanceMonitor = new PerformanceMonitor();
+        this.timeouts = new Set();
         
         // Render loop time tracking
         this.time = 0;
@@ -26,14 +32,16 @@ class DevilImp {
             this.startRenderLoop();
             
             // Initial greeting after dramatic pause
-            setTimeout(() => {
+            const greetingTimeout = setTimeout(() => {
                 this.speak('greeting_audience');
                 this.audioManager.playDemonicEntry();
-                document.getElementById('loading').style.display = 'none';
+                const loadingEl = document.getElementById('loading');
+                if (loadingEl) loadingEl.style.display = 'none';
                 
                 // Show initial performance spotlight
                 this.showSpotlight();
             }, 2000);
+            this.timeouts.add(greetingTimeout);
             
         } catch (error) {
             console.error("Failed to initialize Devil Imp:", error);
@@ -77,15 +85,27 @@ class DevilImp {
         // Create lighting
         this.createLighting();
         
-        // Create character
-        this.characterBuilder = new CharacterBuilder(this.scene);
-        const characterData = this.characterBuilder.createCharacter();
-        this.characterParts = characterData.parts;
-        this.characterMaterials = characterData.materials;
+        // Create advanced character with fallback
+        try {
+            this.advancedCharacterBuilder = new AdvancedCharacterBuilder(this.scene);
+            const characterData = await this.advancedCharacterBuilder.createAdvancedCharacter();
+            this.characterParts = characterData.parts;
+            this.characterMaterials = characterData.materials;
+            this.isAdvancedCharacter = true;
+        } catch (error) {
+            console.warn("Advanced character failed, using fallback:", error);
+            // Fallback to basic character
+            this.characterBuilder = new CharacterBuilder(this.scene);
+            const characterData = this.characterBuilder.createCharacter();
+            this.characterParts = characterData.parts;
+            this.characterMaterials = characterData.materials;
+            this.characterBuilder.createGround(this.characterMaterials);
+            this.particleSystem = this.characterBuilder.createParticleSystem(this.characterParts.root);
+            this.isAdvancedCharacter = false;
+        }
         
-        // Create environment
-        this.characterBuilder.createGround(this.characterMaterials);
-        this.particleSystem = this.characterBuilder.createParticleSystem(this.characterParts.root);
+        // Immediately set character to look at viewer
+        this.initializeViewerFocus();
         
         // Create viewport boundaries (invisible)
         this.createViewportBoundaries();
@@ -149,6 +169,26 @@ class DevilImp {
         this.boundaries = boundaries;
     }
     
+    initializeViewerFocus() {
+        // Ensure character immediately looks at viewer
+        if (this.characterParts.root) {
+            // Position character to face viewer
+            this.characterParts.root.rotation.y = 0;
+            this.characterParts.root.position.set(0, 0, 0);
+        }
+        
+        // Set eye tracking target to viewer
+        if (this.characterParts.eyeSystem && this.characterParts.eyeSystem.lookTarget) {
+            this.characterParts.eyeSystem.lookTarget.position.set(0, 2, -5);
+        }
+        
+        // Set head to look at viewer
+        if (this.characterParts.head) {
+            this.characterParts.head.rotation.x = -0.1; // Slight downward angle
+            this.characterParts.head.rotation.y = 0;    // Face forward
+        }
+    }
+    
     speak(category) {
         const text = this.aiController.getRandomPhrase(category);
         const speechBubble = document.getElementById('speechBubble');
@@ -159,9 +199,12 @@ class DevilImp {
         this.positionSpeechBubble();
         
         // Hide after configured time
-        setTimeout(() => {
-            speechBubble.style.display = 'none';
+        const hideTimeout = setTimeout(() => {
+            if (speechBubble) {
+                speechBubble.style.display = 'none';
+            }
         }, DEVIL_IMP_CONFIG.speech.displayDuration);
+        this.timeouts.add(hideTimeout);
     }
     
     positionSpeechBubble() {
@@ -190,10 +233,13 @@ class DevilImp {
         if (this.characterParts.leftEye && this.characterParts.rightEye) {
             this.characterParts.leftEye.scaling.y = 0.1;
             this.characterParts.rightEye.scaling.y = 0.1;
-            setTimeout(() => {
-                this.characterParts.leftEye.scaling.y = 1;
-                this.characterParts.rightEye.scaling.y = 1;
+            const blinkTimeout = setTimeout(() => {
+                if (this.characterParts.leftEye && this.characterParts.rightEye) {
+                    this.characterParts.leftEye.scaling.y = 1;
+                    this.characterParts.rightEye.scaling.y = 1;
+                }
             }, 150);
+            this.timeouts.add(blinkTimeout);
         }
     }
     
@@ -208,40 +254,76 @@ class DevilImp {
         const floatIntensity = baseFloatIntensity * performanceMultiplier;
         this.characterParts.root.position.y = 0.1 + Math.sin(this.time * 1.5) * floatIntensity;
         
-        // Fourth wall breaking - look directly at viewer
+        // Advanced eye tracking and viewer focus
+        if (this.advancedCharacterBuilder) {
+            this.advancedCharacterBuilder.updateEyeTracking(deltaTime);
+        }
+        
+        // Fourth wall breaking - enhanced head tracking
         if (this.aiController.isLookingAtViewer()) {
             if (this.characterParts.head) {
-                // Head tracks towards viewer/camera
-                const targetRotY = Math.sin(this.time * 0.5) * 0.1; // Subtle head movement
-                const targetRotX = -0.1; // Slight downward angle to "look" at viewer
-                this.characterParts.head.rotation.y = BABYLON.Scalar.Lerp(this.characterParts.head.rotation.y, targetRotY, deltaTime * 2);
-                this.characterParts.head.rotation.x = BABYLON.Scalar.Lerp(this.characterParts.head.rotation.x, targetRotX, deltaTime * 2);
+                // More pronounced head movement toward viewer
+                const targetRotY = Math.sin(this.time * 0.3) * 0.15;
+                const targetRotX = -0.15 + Math.sin(this.time * 0.2) * 0.05;
+                this.characterParts.head.rotation.y = BABYLON.Scalar.Lerp(this.characterParts.head.rotation.y, targetRotY, deltaTime * 3);
+                this.characterParts.head.rotation.x = BABYLON.Scalar.Lerp(this.characterParts.head.rotation.x, targetRotX, deltaTime * 3);
+            }
+        } else {
+            // Still maintain some viewer awareness even when not actively breaking fourth wall
+            if (this.characterParts.head) {
+                const subtleRotY = Math.sin(this.time * 0.1) * 0.05;
+                const subtleRotX = -0.05;
+                this.characterParts.head.rotation.y = BABYLON.Scalar.Lerp(this.characterParts.head.rotation.y, subtleRotY, deltaTime * 1);
+                this.characterParts.head.rotation.x = BABYLON.Scalar.Lerp(this.characterParts.head.rotation.x, subtleRotX, deltaTime * 1);
             }
         }
         
         // Performance trick animations
         this.updatePerformanceTrickAnimations(deltaTime);
         
-        // Enhanced arm animations based on activity
-        const armSpeed = this.getPerformanceArmSpeed();
-        if (this.characterParts.leftArm && this.characterParts.rightArm) {
+        // Enhanced limb animations using advanced character system
+        if (this.characterParts.limbs) {
+            const armSpeed = this.getPerformanceArmSpeed();
+            
             if (aiState.activity === 'performance_trick') {
-                // Dramatic performance gestures
-                this.characterParts.leftArm.rotation.z = 0.2 + Math.sin(this.time * armSpeed) * 0.8;
-                this.characterParts.rightArm.rotation.z = -0.2 - Math.sin(this.time * armSpeed + Math.PI) * 0.8;
+                // Use advanced performance animations
+                const currentTrick = this.aiController.getCurrentTrick();
+                if (this.advancedCharacterBuilder && currentTrick) {
+                    this.advancedCharacterBuilder.playPerformanceAnimation(currentTrick);
+                }
             } else if (aiState.activity === 'fourth_wall_break') {
-                // Pointing and gesturing at viewer
-                this.characterParts.leftArm.rotation.z = 0.3 + Math.sin(this.time * 3) * 0.2;
-                this.characterParts.rightArm.rotation.z = -0.8; // Pointing gesture
+                // Advanced pointing gesture using limb chains
+                if (this.characterParts.limbs.rightArm) {
+                    const rightArm = this.characterParts.limbs.rightArm;
+                    if (rightArm.shoulder) {
+                        rightArm.shoulder.rotation.z = -0.8;
+                        rightArm.shoulder.rotation.x = -0.2;
+                    }
+                    if (rightArm.elbow) {
+                        rightArm.elbow.rotation.z = 0.3;
+                    }
+                }
+                
+                if (this.characterParts.limbs.leftArm && this.characterParts.limbs.leftArm.shoulder) {
+                    this.characterParts.limbs.leftArm.shoulder.rotation.z = 0.3 + Math.sin(this.time * 3) * 0.2;
+                }
             } else {
-                // Regular arm movement
-                this.characterParts.leftArm.rotation.z = 0.6 + Math.sin(this.time * armSpeed) * 0.4;
-                this.characterParts.rightArm.rotation.z = -0.6 - Math.sin(this.time * armSpeed) * 0.4;
+                // Regular limb movement with advanced joint system
+                if (this.characterParts.limbs.leftArm && this.characterParts.limbs.leftArm.shoulder) {
+                    this.characterParts.limbs.leftArm.shoulder.rotation.z = 0.4 + Math.sin(this.time * armSpeed) * 0.3;
+                }
+                if (this.characterParts.limbs.rightArm && this.characterParts.limbs.rightArm.shoulder) {
+                    this.characterParts.limbs.rightArm.shoulder.rotation.z = -0.4 - Math.sin(this.time * armSpeed) * 0.3;
+                }
             }
         }
         
-        // Tail animation
-        if (this.characterParts.tailSegments) {
+        // Advanced tail animation with joint-based movement
+        if (this.characterParts.tail && this.characterParts.tail.joints) {
+            // Advanced tail uses joint-based animation from the character builder
+            // This is handled automatically by the GSAP animations in setupIdleAnimations
+        } else if (this.characterParts.tailSegments) {
+            // Fallback for basic tail animation
             this.characterParts.tailSegments.forEach((segment, i) => {
                 segment.position.x = Math.sin(this.time * 2.5 + i * 0.8) * 0.15;
                 segment.rotation.z = Math.sin(this.time * 2 + i * 0.5) * 0.2;
@@ -264,14 +346,33 @@ class DevilImp {
                     this.characterParts.root.rotation.y, angle, deltaTime * 3
                 );
                 
-                // Walking animation
-                if (this.characterParts.leftLeg && this.characterParts.rightLeg) {
+                // Advanced walking animation using leg chains
+                if (this.characterParts.limbs && this.characterParts.limbs.leftLeg && this.characterParts.limbs.rightLeg) {
+                    const leftLeg = this.characterParts.limbs.leftLeg;
+                    const rightLeg = this.characterParts.limbs.rightLeg;
+                    
+                    if (leftLeg.hip) leftLeg.hip.rotation.x = Math.sin(this.time * 8) * 0.5;
+                    if (leftLeg.knee) leftLeg.knee.rotation.x = Math.max(0, Math.sin(this.time * 8 + Math.PI/4) * 0.8);
+                    
+                    if (rightLeg.hip) rightLeg.hip.rotation.x = -Math.sin(this.time * 8) * 0.5;
+                    if (rightLeg.knee) rightLeg.knee.rotation.x = Math.max(0, -Math.sin(this.time * 8 + Math.PI/4) * 0.8);
+                } else if (this.characterParts.leftLeg && this.characterParts.rightLeg) {
+                    // Fallback basic walking
                     this.characterParts.leftLeg.rotation.x = Math.sin(this.time * 8) * 0.4;
                     this.characterParts.rightLeg.rotation.x = -Math.sin(this.time * 8) * 0.4;
                 }
             } else {
                 // Stop walking animation
-                if (this.characterParts.leftLeg && this.characterParts.rightLeg) {
+                if (this.characterParts.limbs && this.characterParts.limbs.leftLeg && this.characterParts.limbs.rightLeg) {
+                    const leftLeg = this.characterParts.limbs.leftLeg;
+                    const rightLeg = this.characterParts.limbs.rightLeg;
+                    
+                    if (leftLeg.hip) leftLeg.hip.rotation.x = BABYLON.Scalar.Lerp(leftLeg.hip.rotation.x, 0, deltaTime * 5);
+                    if (leftLeg.knee) leftLeg.knee.rotation.x = BABYLON.Scalar.Lerp(leftLeg.knee.rotation.x, 0, deltaTime * 5);
+                    if (rightLeg.hip) rightLeg.hip.rotation.x = BABYLON.Scalar.Lerp(rightLeg.hip.rotation.x, 0, deltaTime * 5);
+                    if (rightLeg.knee) rightLeg.knee.rotation.x = BABYLON.Scalar.Lerp(rightLeg.knee.rotation.x, 0, deltaTime * 5);
+                } else if (this.characterParts.leftLeg && this.characterParts.rightLeg) {
+                    // Fallback basic stop
                     this.characterParts.leftLeg.rotation.x = BABYLON.Scalar.Lerp(this.characterParts.leftLeg.rotation.x, 0, deltaTime * 5);
                     this.characterParts.rightLeg.rotation.x = BABYLON.Scalar.Lerp(this.characterParts.rightLeg.rotation.x, 0, deltaTime * 5);
                 }
@@ -384,6 +485,9 @@ class DevilImp {
             // Update AI behavior
             this.aiController.update(deltaTime);
             
+            // Update performance monitoring
+            this.performanceMonitor.update(this.engine);
+            
             // Handle speech with performance categories
             if (this.aiController.shouldSpeak()) {
                 const aiState = this.aiController.state;
@@ -458,6 +562,37 @@ class DevilImp {
             const aiState = this.aiController.state;
             debugElement.innerHTML = 
                 `FPS: ${this.engine.getFps().toFixed(0)} | Mood: ${aiState.mood} | Activity: ${aiState.activity} | Performance: ${aiState.performanceLevel.toFixed(1)} | Attention: ${aiState.audienceAttention.toFixed(0)}%`;
+        }
+    }
+    
+    dispose() {
+        // Clear all timeouts
+        this.timeouts.forEach(id => clearTimeout(id));
+        this.timeouts.clear();
+        
+        // Cleanup resource manager
+        if (this.resourceManager) {
+            this.resourceManager.cleanup();
+        }
+        
+        // Cleanup advanced character systems
+        if (this.advancedCharacterBuilder) {
+            this.advancedCharacterBuilder.dispose();
+        }
+        
+        // Cleanup basic character systems
+        if (this.particleSystem) {
+            this.particleSystem.dispose();
+        }
+        
+        // Cleanup scene
+        if (this.scene) {
+            this.scene.dispose();
+        }
+        
+        // Cleanup engine last
+        if (this.engine) {
+            this.engine.dispose();
         }
     }
 }
