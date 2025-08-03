@@ -223,7 +223,7 @@ class GhostCharacter {
                         console.log(`🔧 Engine creation attempt ${i + 1} (webgl: ${contextType}) with config:`, engineOptions[i]);
                         this.engine = new BABYLON.Engine(this.canvas, contextType, engineOptions[i]);
                         
-                        if (this.engine && this.engine.isWebGPU !== undefined) {
+                        if (this.engine) {
                             console.log('✅ Babylon.js engine created successfully');
                             console.log('Engine info:', {
                                 webgl: this.engine._gl ? 'available' : 'not available',
