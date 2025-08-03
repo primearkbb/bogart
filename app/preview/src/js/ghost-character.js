@@ -1,5 +1,5 @@
-// Main Devil Imp class that orchestrates all components
-class DevilImp {
+// Main Ghost Character class that orchestrates all components
+class GhostCharacter {
     constructor() {
         this.canvas = document.getElementById("renderCanvas");
         this.engine = null;
@@ -31,10 +31,10 @@ class DevilImp {
             await this.createScene();
             this.startRenderLoop();
             
-            // Initial greeting after dramatic pause
+            // Initial ethereal greeting after dramatic pause
             const greetingTimeout = setTimeout(() => {
                 this.speak('greeting_audience');
-                this.audioManager.playDemonicEntry();
+                this.audioManager.playEtherealEntry();
                 const loadingEl = document.getElementById('loading');
                 if (loadingEl) loadingEl.style.display = 'none';
                 
@@ -44,8 +44,8 @@ class DevilImp {
             this.timeouts.add(greetingTimeout);
             
         } catch (error) {
-            console.error("Failed to initialize Devil Imp:", error);
-            document.getElementById('loading').innerHTML = 'Failed to summon imp: ' + error.message;
+            console.error("Failed to initialize Ghost Character:", error);
+            document.getElementById('loading').innerHTML = 'Failed to manifest ghost: ' + error.message;
         }
     }
     
@@ -72,17 +72,17 @@ class DevilImp {
     }
     
     async createEngine() {
-        const config = DEVIL_IMP_CONFIG.engine;
+        const config = GHOST_CHARACTER_CONFIG.engine;
         this.engine = new BABYLON.Engine(this.canvas, true, config);
     }
     
     async createScene() {
         // Create scene
         this.scene = new BABYLON.Scene(this.engine);
-        const sceneConfig = DEVIL_IMP_CONFIG.scene;
+        const sceneConfig = GHOST_CHARACTER_CONFIG.scene;
         this.scene.clearColor = new BABYLON.Color3(sceneConfig.clearColor.r, sceneConfig.clearColor.g, sceneConfig.clearColor.b);
         
-        // Setup fog
+        // Setup fog for ethereal atmosphere
         this.scene.fogMode = BABYLON.Scene.FOGMODE_LINEAR;
         this.scene.fogColor = this.scene.clearColor;
         this.scene.fogStart = sceneConfig.fogStart;
@@ -120,7 +120,7 @@ class DevilImp {
     }
     
     createCamera() {
-        const cameraConfig = DEVIL_IMP_CONFIG.camera;
+        const cameraConfig = GHOST_CHARACTER_CONFIG.camera;
         this.camera = new BABYLON.UniversalCamera("camera", 
             new BABYLON.Vector3(cameraConfig.position.x, cameraConfig.position.y, cameraConfig.position.z), 
             this.scene
@@ -131,7 +131,7 @@ class DevilImp {
     }
     
     createLighting() {
-        const lightingConfig = DEVIL_IMP_CONFIG.lighting;
+        const lightingConfig = GHOST_CHARACTER_CONFIG.lighting;
         
         // Ambient light
         const ambientLight = new BABYLON.HemisphericLight("ambient", new BABYLON.Vector3(0, 1, 0), this.scene);
@@ -140,12 +140,12 @@ class DevilImp {
         ambientLight.diffuse = new BABYLON.Color3(ambientConfig.diffuse.r, ambientConfig.diffuse.g, ambientConfig.diffuse.b);
         ambientLight.groundColor = new BABYLON.Color3(ambientConfig.groundColor.r, ambientConfig.groundColor.g, ambientConfig.groundColor.b);
         
-        // Fire light
-        const fireLight = new BABYLON.PointLight("fire", new BABYLON.Vector3(0, 1, 0), this.scene);
-        const fireConfig = lightingConfig.fire;
-        fireLight.diffuse = new BABYLON.Color3(fireConfig.diffuse.r, fireConfig.diffuse.g, fireConfig.diffuse.b);
-        fireLight.intensity = fireConfig.intensity;
-        fireLight.range = fireConfig.range;
+        // Ethereal light
+        const etherealLight = new BABYLON.PointLight("ethereal", new BABYLON.Vector3(0, 1, 0), this.scene);
+        const etherealConfig = lightingConfig.ethereal;
+        etherealLight.diffuse = new BABYLON.Color3(etherealConfig.diffuse.r, etherealConfig.diffuse.g, etherealConfig.diffuse.b);
+        etherealLight.intensity = etherealConfig.intensity;
+        etherealLight.range = etherealConfig.range;
     }
     
     // createViewportBoundaries method removed - character is now stationary and doesn't need collision boundaries
@@ -184,7 +184,7 @@ class DevilImp {
             if (speechBubble) {
                 speechBubble.style.display = 'none';
             }
-        }, DEVIL_IMP_CONFIG.speech.displayDuration);
+        }, GHOST_CHARACTER_CONFIG.speech.displayDuration);
         this.timeouts.add(hideTimeout);
     }
     
@@ -212,7 +212,7 @@ class DevilImp {
             
             // Calculate constrained position
             let targetX = screenPos.x;
-            let targetY = screenPos.y - DEVIL_IMP_CONFIG.speech.bubbleOffset;
+            let targetY = screenPos.y - GHOST_CHARACTER_CONFIG.speech.bubbleOffset;
             
             // Constrain X position (accounting for transform: translate(-50%, 0))
             const minX = (bubbleWidth / 2) + margin;
@@ -244,7 +244,7 @@ class DevilImp {
                     this.characterParts.leftEye.scaling.y = 1;
                     this.characterParts.rightEye.scaling.y = 1;
                 }
-            }, 150);
+            }, 200); // Slightly longer blink for ghostly effect
             this.timeouts.add(blinkTimeout);
         }
     }
@@ -254,33 +254,33 @@ class DevilImp {
         
         const aiState = this.aiController.state;
         
-        // Enhanced floating animation based on performance level
+        // Enhanced floating animation based on performance level - more pronounced for ghost
         const baseFloatIntensity = this.aiController.getFloatIntensity();
-        const performanceMultiplier = 1 + (this.aiController.getPerformanceLevel() - 1) * 0.3;
+        const performanceMultiplier = 1 + (this.aiController.getPerformanceLevel() - 1) * 0.4;
         const floatIntensity = baseFloatIntensity * performanceMultiplier;
-        this.characterParts.root.position.y = 0.1 + Math.sin(this.time * 1.5) * floatIntensity;
+        this.characterParts.root.position.y = 0.2 + Math.sin(this.time * 1.2) * floatIntensity;
         
         // Advanced eye tracking and viewer focus
         if (this.advancedCharacterBuilder) {
             this.advancedCharacterBuilder.updateEyeTracking(deltaTime);
         }
         
-        // Fourth wall breaking - enhanced head tracking
+        // Fourth wall breaking - enhanced head tracking with ethereal movement
         if (this.aiController.isLookingAtViewer()) {
             if (this.characterParts.head) {
-                // More pronounced head movement toward viewer
-                const targetRotY = Math.sin(this.time * 0.3) * 0.15;
-                const targetRotX = -0.15 + Math.sin(this.time * 0.2) * 0.05;
-                this.characterParts.head.rotation.y = BABYLON.Scalar.Lerp(this.characterParts.head.rotation.y, targetRotY, deltaTime * 3);
-                this.characterParts.head.rotation.x = BABYLON.Scalar.Lerp(this.characterParts.head.rotation.x, targetRotX, deltaTime * 3);
+                // More fluid ghostly head movement
+                const targetRotY = Math.sin(this.time * 0.2) * 0.1;
+                const targetRotX = -0.1 + Math.sin(this.time * 0.15) * 0.03;
+                this.characterParts.head.rotation.y = BABYLON.Scalar.Lerp(this.characterParts.head.rotation.y, targetRotY, deltaTime * 2);
+                this.characterParts.head.rotation.x = BABYLON.Scalar.Lerp(this.characterParts.head.rotation.x, targetRotX, deltaTime * 2);
             }
         } else {
-            // Still maintain some viewer awareness even when not actively breaking fourth wall
+            // Gentle ethereal drifting movement
             if (this.characterParts.head) {
-                const subtleRotY = Math.sin(this.time * 0.1) * 0.05;
-                const subtleRotX = -0.05;
-                this.characterParts.head.rotation.y = BABYLON.Scalar.Lerp(this.characterParts.head.rotation.y, subtleRotY, deltaTime * 1);
-                this.characterParts.head.rotation.x = BABYLON.Scalar.Lerp(this.characterParts.head.rotation.x, subtleRotX, deltaTime * 1);
+                const subtleRotY = Math.sin(this.time * 0.08) * 0.03;
+                const subtleRotX = -0.03;
+                this.characterParts.head.rotation.y = BABYLON.Scalar.Lerp(this.characterParts.head.rotation.y, subtleRotY, deltaTime * 0.8);
+                this.characterParts.head.rotation.x = BABYLON.Scalar.Lerp(this.characterParts.head.rotation.x, subtleRotX, deltaTime * 0.8);
             }
         }
         
@@ -298,82 +298,69 @@ class DevilImp {
                     this.advancedCharacterBuilder.playPerformanceAnimation(currentTrick);
                 }
             } else if (aiState.activity === 'fourth_wall_break') {
-                // Advanced pointing gesture using limb chains
+                // Advanced pointing gesture using limb chains - more fluid for ghost
                 if (this.characterParts.limbs.rightArm) {
                     const rightArm = this.characterParts.limbs.rightArm;
                     if (rightArm.shoulder) {
-                        rightArm.shoulder.rotation.z = -0.8;
-                        rightArm.shoulder.rotation.x = -0.2;
+                        rightArm.shoulder.rotation.z = -0.6;
+                        rightArm.shoulder.rotation.x = -0.15;
                     }
                     if (rightArm.elbow) {
-                        rightArm.elbow.rotation.z = 0.3;
+                        rightArm.elbow.rotation.z = 0.2;
                     }
                 }
                 
                 if (this.characterParts.limbs.leftArm && this.characterParts.limbs.leftArm.shoulder) {
-                    this.characterParts.limbs.leftArm.shoulder.rotation.z = 0.3 + Math.sin(this.time * 3) * 0.2;
+                    this.characterParts.limbs.leftArm.shoulder.rotation.z = 0.2 + Math.sin(this.time * 2) * 0.15;
                 }
             } else {
-                // Regular limb movement with advanced joint system
+                // Regular ethereal limb movement
                 if (this.characterParts.limbs.leftArm && this.characterParts.limbs.leftArm.shoulder) {
-                    this.characterParts.limbs.leftArm.shoulder.rotation.z = 0.4 + Math.sin(this.time * armSpeed) * 0.3;
+                    this.characterParts.limbs.leftArm.shoulder.rotation.z = 0.3 + Math.sin(this.time * armSpeed * 0.8) * 0.2;
                 }
                 if (this.characterParts.limbs.rightArm && this.characterParts.limbs.rightArm.shoulder) {
-                    this.characterParts.limbs.rightArm.shoulder.rotation.z = -0.4 - Math.sin(this.time * armSpeed) * 0.3;
+                    this.characterParts.limbs.rightArm.shoulder.rotation.z = -0.3 - Math.sin(this.time * armSpeed * 0.8) * 0.2;
                 }
             }
         }
         
-        // Advanced tail animation with joint-based movement
+        // Advanced ghostly tail animation
         if (this.characterParts.tail && this.characterParts.tail.joints) {
-            // Advanced tail uses joint-based animation from the character builder
+            // Advanced tail uses joint-based animation
             // This is handled automatically by the GSAP animations in setupIdleAnimations
-        } else if (this.characterParts.tailSegments) {
-            // Fallback for basic tail animation
-            this.characterParts.tailSegments.forEach((segment, i) => {
-                segment.position.x = Math.sin(this.time * 2.5 + i * 0.8) * 0.15;
-                segment.rotation.z = Math.sin(this.time * 2 + i * 0.5) * 0.2;
+        } else if (this.characterParts.ghostTail) {
+            // Fallback for basic ghostly tail animation
+            this.characterParts.ghostTail.forEach((segment, i) => {
+                segment.position.x = Math.sin(this.time * 1.5 + i * 0.5) * 0.08;
+                segment.rotation.z = Math.sin(this.time * 1.2 + i * 0.3) * 0.15;
+                // Add gentle vertical undulation
+                segment.position.y += Math.sin(this.time * 0.8 + i * 0.4) * 0.02;
             });
         }
         
         // Character movement removed - character now stays stationary in viewport center
         // Character rotation is reset to face viewer
         if (this.characterParts.root) {
-            this.characterParts.root.rotation.y = BABYLON.Scalar.Lerp(this.characterParts.root.rotation.y, 0, deltaTime * 3);
+            this.characterParts.root.rotation.y = BABYLON.Scalar.Lerp(this.characterParts.root.rotation.y, 0, deltaTime * 2);
         }
         
-        // Reset leg positions to idle when stationary
-        if (this.characterParts.limbs && this.characterParts.limbs.leftLeg && this.characterParts.limbs.rightLeg) {
-            const leftLeg = this.characterParts.limbs.leftLeg;
-            const rightLeg = this.characterParts.limbs.rightLeg;
+        // Viewport interaction animation - more ethereal
+        if (aiState.activity === 'phase_interaction') {
+            const phaseIntensity = Math.sin(this.time * 8) * 0.05;
+            this.characterParts.root.position.y += phaseIntensity;
             
-            if (leftLeg.hip) leftLeg.hip.rotation.x = BABYLON.Scalar.Lerp(leftLeg.hip.rotation.x, 0, deltaTime * 5);
-            if (leftLeg.knee) leftLeg.knee.rotation.x = BABYLON.Scalar.Lerp(leftLeg.knee.rotation.x, 0, deltaTime * 5);
-            if (rightLeg.hip) rightLeg.hip.rotation.x = BABYLON.Scalar.Lerp(rightLeg.hip.rotation.x, 0, deltaTime * 5);
-            if (rightLeg.knee) rightLeg.knee.rotation.x = BABYLON.Scalar.Lerp(rightLeg.knee.rotation.x, 0, deltaTime * 5);
-        } else if (this.characterParts.leftLeg && this.characterParts.rightLeg) {
-            // Fallback basic idle position
-            this.characterParts.leftLeg.rotation.x = BABYLON.Scalar.Lerp(this.characterParts.leftLeg.rotation.x, 0, deltaTime * 5);
-            this.characterParts.rightLeg.rotation.x = BABYLON.Scalar.Lerp(this.characterParts.rightLeg.rotation.x, 0, deltaTime * 5);
-        }
-        
-        // Viewport interaction animation
-        if (aiState.activity === 'viewport_interaction') {
-            const attackIntensity = Math.sin(this.time * 15) * 0.1;
-            this.characterParts.root.position.y += attackIntensity;
-            
-            // Aggressive gestures
+            // Ethereal gestures
             if (this.characterParts.leftArm && this.characterParts.rightArm) {
-                this.characterParts.leftArm.rotation.z = 0.2 + Math.sin(this.time * 10) * 0.5;
-                this.characterParts.rightArm.rotation.z = -0.2 - Math.sin(this.time * 10) * 0.5;
+                this.characterParts.leftArm.rotation.z = 0.15 + Math.sin(this.time * 6) * 0.3;
+                this.characterParts.rightArm.rotation.z = -0.15 - Math.sin(this.time * 6) * 0.3;
             }
         }
         
         // Performance animation
         if (aiState.isPerforming) {
-            // Special performance gestures
+            // Special ethereal performance gestures
             if (this.characterParts.head) {
-                this.characterParts.head.rotation.y = Math.sin(this.time * 3) * 0.5;
+                this.characterParts.head.rotation.y = Math.sin(this.time * 2) * 0.3;
             }
         }
     }
@@ -385,33 +372,37 @@ class DevilImp {
         if (!currentTrick || !this.characterParts.root) return;
         
         switch (currentTrick) {
-            case 'spin_dance':
-                this.characterParts.root.rotation.y += deltaTime * 3;
+            case 'ethereal_dance':
+                this.characterParts.root.rotation.y += deltaTime * 2;
                 break;
                 
-            case 'levitation':
-                this.characterParts.root.position.y += Math.sin(this.time * 4) * 0.2;
-                break;
-                
-            case 'magic_pose':
-                if (this.characterParts.leftArm && this.characterParts.rightArm) {
-                    this.characterParts.leftArm.rotation.z = -1.2;
-                    this.characterParts.rightArm.rotation.z = 1.2;
-                    this.characterParts.leftArm.rotation.x = Math.sin(this.time * 5) * 0.3;
-                    this.characterParts.rightArm.rotation.x = Math.sin(this.time * 5) * 0.3;
+            case 'phase_shift':
+                this.characterParts.root.position.y += Math.sin(this.time * 5) * 0.3;
+                // Add transparency animation
+                if (this.characterMaterials.ghost) {
+                    this.characterMaterials.ghost.alpha = 0.4 + Math.sin(this.time * 4) * 0.3;
                 }
                 break;
                 
-            case 'dramatic_bow':
+            case 'ethereal_pose':
+                if (this.characterParts.leftArm && this.characterParts.rightArm) {
+                    this.characterParts.leftArm.rotation.z = -1.0;
+                    this.characterParts.rightArm.rotation.z = 1.0;
+                    this.characterParts.leftArm.rotation.x = Math.sin(this.time * 3) * 0.2;
+                    this.characterParts.rightArm.rotation.x = Math.sin(this.time * 3) * 0.2;
+                }
+                break;
+                
+            case 'gentle_bow':
                 if (this.characterParts.body) {
-                    this.characterParts.body.rotation.x = Math.sin(this.time * 2) * 0.4 - 0.3;
+                    this.characterParts.body.rotation.x = Math.sin(this.time * 1.5) * 0.3 - 0.2;
                 }
                 if (this.characterParts.head) {
-                    this.characterParts.head.rotation.x = Math.sin(this.time * 2) * 0.2 - 0.5;
+                    this.characterParts.head.rotation.x = Math.sin(this.time * 1.5) * 0.15 - 0.3;
                 }
                 break;
                 
-            case 'fire_display':
+            case 'ethereal_display':
                 // Enhanced particle effects handled in updateLighting
                 break;
         }
@@ -419,12 +410,12 @@ class DevilImp {
     
     getPerformanceArmSpeed() {
         const aiState = this.aiController.state;
-        const baseSpeed = this.aiController.getArmSpeed();
+        const baseSpeed = this.aiController.getArmSpeed() * 0.7; // Slower, more ethereal
         
         if (aiState.activity === 'performance_trick') {
-            return baseSpeed * 1.5;
+            return baseSpeed * 1.2;
         } else if (aiState.activity === 'fourth_wall_break') {
-            return baseSpeed * 0.8;
+            return baseSpeed * 0.6;
         }
         
         return baseSpeed;
@@ -445,13 +436,13 @@ class DevilImp {
     }
     
     updateLighting() {
-        // Fire light flicker based on mood
-        const fireLight = this.scene.getLightByName("fire");
-        if (fireLight) {
+        // Ethereal light flicker based on mood
+        const etherealLight = this.scene.getLightByName("ethereal");
+        if (etherealLight) {
             const mood = this.aiController.state.mood;
-            const intensity = mood === 'angry' ? 2.5 : 1.5;
-            const flicker = mood === 'menacing' ? 0.8 : 0.3;
-            fireLight.intensity = intensity + Math.sin(this.time * 12) * flicker;
+            const intensity = mood === 'melancholic' ? 1.8 : 2.0;
+            const flicker = mood === 'mysterious' ? 0.6 : 0.2;
+            etherealLight.intensity = intensity + Math.sin(this.time * 6) * flicker;
         }
     }
     
@@ -482,8 +473,8 @@ class DevilImp {
                     case 'audience_engagement':
                         speechCategory = 'audience_engagement';
                         break;
-                    case 'showboating':
-                        speechCategory = 'showboating';
+                    case 'showing_off':
+                        speechCategory = 'showing_off';
                         break;
                     case 'greeting_audience':
                         speechCategory = 'greeting_audience';
@@ -493,7 +484,7 @@ class DevilImp {
                 }
                 
                 this.speak(speechCategory);
-                this.audioManager.playCackle();
+                this.audioManager.playWhisper();
                 this.aiController.resetSpeechTimer();
             }
             
@@ -503,11 +494,11 @@ class DevilImp {
                 this.aiController.resetBlinkTimer();
             }
             
-            // Handle viewport interactions
-            if (this.aiController.state.activity === 'viewport_interaction') {
-                if (Math.random() < 0.02) { // 2% chance per frame during interaction
-                    this.speak('viewport_interaction');
-                    this.audioManager.playViewportAttack();
+            // Handle phase interactions
+            if (this.aiController.state.activity === 'phase_interaction') {
+                if (Math.random() < 0.015) { // 1.5% chance per frame during interaction
+                    this.speak('phase_interaction');
+                    this.audioManager.playPhaseShift();
                 }
             }
             

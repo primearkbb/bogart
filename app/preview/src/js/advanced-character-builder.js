@@ -1,8 +1,8 @@
-// Advanced character builder with cutting-edge animation and materials
+// Advanced character builder for Ghost Character with cutting-edge animation and materials
 class AdvancedCharacterBuilder {
     constructor(scene) {
         this.scene = scene;
-        this.config = DEVIL_IMP_CONFIG.character;
+        this.config = GHOST_CHARACTER_CONFIG.character;
         this.animationManager = null;
         this.facialRig = null;
         this.skeletalSystem = null;
@@ -33,47 +33,51 @@ class AdvancedCharacterBuilder {
     createAdvancedMaterials() {
         const materials = {};
         
-        // Advanced PBR material for imp skin
-        materials.impSkin = new BABYLON.PBRMaterial("advancedImpSkin", this.scene);
-        materials.impSkin.baseColor = new BABYLON.Color3(0.8, 0.15, 0.1);
-        materials.impSkin.metallicFactor = 0.1;
-        materials.impSkin.roughnessFactor = 0.6;
-        materials.impSkin.emissiveColor = new BABYLON.Color3(0.2, 0.05, 0.05);
+        // Advanced PBR material for ghost ethereal form
+        materials.ghostForm = new BABYLON.PBRMaterial("advancedGhostForm", this.scene);
+        materials.ghostForm.baseColor = new BABYLON.Color3(0.9, 0.95, 1.0);
+        materials.ghostForm.metallicFactor = 0.0;
+        materials.ghostForm.roughnessFactor = 0.1;
+        materials.ghostForm.emissiveColor = new BABYLON.Color3(0.2, 0.3, 0.5);
+        materials.ghostForm.alpha = 0.6;
+        materials.ghostForm.alphaMode = BABYLON.Engine.ALPHA_BLEND;
         
-        // Add subsurface scattering simulation
-        materials.impSkin.subSurface.isScatteringEnabled = true;
-        materials.impSkin.subSurface.scatteringColor = new BABYLON.Color3(0.9, 0.3, 0.2);
-        materials.impSkin.subSurface.translucencyIntensity = 0.3;
+        // Add ethereal subsurface scattering
+        materials.ghostForm.subSurface.isScatteringEnabled = true;
+        materials.ghostForm.subSurface.scatteringColor = new BABYLON.Color3(0.6, 0.8, 1.0);
+        materials.ghostForm.subSurface.translucencyIntensity = 0.8;
         
-        // Advanced eye material with realistic properties
+        // Advanced eye material with ethereal properties
         materials.eyes = new BABYLON.PBRMaterial("advancedEyes", this.scene);
-        materials.eyes.baseColor = new BABYLON.Color3(1, 0.9, 0.1);
-        materials.eyes.metallicFactor = 0.9;
-        materials.eyes.roughnessFactor = 0.1;
-        materials.eyes.emissiveColor = new BABYLON.Color3(0.8, 0.7, 0.1);
+        materials.eyes.baseColor = new BABYLON.Color3(0.6, 0.8, 1.0);
+        materials.eyes.metallicFactor = 0.2;
+        materials.eyes.roughnessFactor = 0.0;
+        materials.eyes.emissiveColor = new BABYLON.Color3(0.4, 0.6, 0.9);
         
         // Create procedural iris texture
         const irisTexture = new BABYLON.DynamicTexture("irisTexture", 256, this.scene);
         this.createIrisPattern(irisTexture);
         materials.eyes.baseTexture = irisTexture;
         
-        // Advanced horn material with age and weathering
-        materials.horns = new BABYLON.PBRMaterial("advancedHorns", this.scene);
-        materials.horns.baseColor = new BABYLON.Color3(0.05, 0.05, 0.05);
-        materials.horns.metallicFactor = 0.3;
-        materials.horns.roughnessFactor = 0.8;
+        // Advanced wispy material for ethereal extensions
+        materials.wisps = new BABYLON.PBRMaterial("advancedWisps", this.scene);
+        materials.wisps.baseColor = new BABYLON.Color3(0.8, 0.9, 1.0);
+        materials.wisps.metallicFactor = 0.0;
+        materials.wisps.roughnessFactor = 0.0;
+        materials.wisps.emissiveColor = new BABYLON.Color3(0.3, 0.5, 0.8);
+        materials.wisps.alpha = 0.4;
+        materials.wisps.alphaMode = BABYLON.Engine.ALPHA_BLEND;
         
-        // Add procedural wear patterns
-        const hornTexture = new BABYLON.DynamicTexture("hornTexture", 512, this.scene);
-        this.createHornTexture(hornTexture);
-        materials.horns.baseTexture = hornTexture;
-        materials.horns.normalTexture = hornTexture;
+        // Add procedural ethereal patterns
+        const wispTexture = new BABYLON.DynamicTexture("wispTexture", 512, this.scene);
+        this.createWispTexture(wispTexture);
+        materials.wisps.baseTexture = wispTexture;
         
-        // Energy aura material
-        materials.aura = new BABYLON.PBRMaterial("energyAura", this.scene);
-        materials.aura.baseColor = new BABYLON.Color3(1, 0.3, 0);
-        materials.aura.emissiveColor = new BABYLON.Color3(1, 0.5, 0.1);
-        materials.aura.alpha = 0.7;
+        // Ethereal aura material
+        materials.aura = new BABYLON.PBRMaterial("etherealAura", this.scene);
+        materials.aura.baseColor = new BABYLON.Color3(0.7, 0.9, 1.0);
+        materials.aura.emissiveColor = new BABYLON.Color3(0.4, 0.7, 1.0);
+        materials.aura.alpha = 0.3;
         materials.aura.alphaMode = BABYLON.Engine.ALPHA_BLEND;
         
         return materials;
@@ -100,20 +104,20 @@ class AdvancedCharacterBuilder {
                 const angle = Math.atan2(dy, dx);
                 
                 if (distance < radius * 0.9) {
-                    // Iris pattern with radial lines
-                    const radialPattern = Math.sin(angle * 12) * 0.5 + 0.5;
-                    const circularPattern = Math.sin(distance * 0.1) * 0.3 + 0.7;
+                    // Ethereal iris pattern with flowing energy
+                    const radialPattern = Math.sin(angle * 8) * 0.5 + 0.5;
+                    const circularPattern = Math.sin(distance * 0.08) * 0.4 + 0.6;
                     const intensity = radialPattern * circularPattern;
                     
-                    data[index] = Math.floor(255 * intensity * 0.9);     // R
-                    data[index + 1] = Math.floor(255 * intensity * 0.8); // G
-                    data[index + 2] = Math.floor(100 * intensity);       // B
+                    data[index] = Math.floor(255 * intensity * 0.6);     // R - less red
+                    data[index + 1] = Math.floor(255 * intensity * 0.8); // G 
+                    data[index + 2] = Math.floor(255 * intensity);       // B - more blue
                     data[index + 3] = 255; // A
                 } else {
-                    // Outer ring (sclera)
-                    data[index] = 240;
-                    data[index + 1] = 235;
-                    data[index + 2] = 220;
+                    // Outer ring (ethereal sclera)
+                    data[index] = 200;
+                    data[index + 1] = 220;
+                    data[index + 2] = 255;
                     data[index + 3] = 255;
                 }
                 
@@ -131,11 +135,11 @@ class AdvancedCharacterBuilder {
         texture.update();
     }
     
-    createHornTexture(texture) {
+    createWispTexture(texture) {
         const context = texture.getContext();
         const size = texture.getSize();
         
-        // Create weathered horn texture with rings and scratches
+        // Create ethereal wispy texture with flowing energy
         const imageData = context.createImageData(size.width, size.height);
         const data = imageData.data;
         
@@ -143,26 +147,30 @@ class AdvancedCharacterBuilder {
             for (let x = 0; x < size.width; x++) {
                 const index = (y * size.width + x) * 4;
                 
-                // Base horn color
-                let intensity = 0.1 + Math.random() * 0.1;
+                // Ethereal flowing pattern
+                const time = Date.now() * 0.001; // For animation
+                let intensity = 0.8 + Math.sin(x * 0.02 + time) * 0.2;
                 
-                // Add growth rings
-                const rings = Math.sin(y * 0.1) * 0.05;
-                intensity += rings;
+                // Add flowing energy streams
+                const flow = Math.sin(y * 0.05 + x * 0.03 + time * 2) * 0.3;
+                intensity += flow;
                 
-                // Add scratches and wear
-                if (Math.random() < 0.002) {
-                    intensity += 0.2; // Scratch highlight
+                // Add ethereal sparkles
+                if (Math.random() < 0.001) {
+                    intensity += 0.5; // Sparkle highlight
                 }
                 
-                // Age variation
-                const age = (y / size.height) * 0.1;
-                intensity += age;
+                // Gradient from center to edges
+                const centerX = size.width / 2;
+                const centerY = size.height / 2;
+                const distFromCenter = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+                const gradient = 1 - (distFromCenter / (size.width / 2));
+                intensity *= Math.max(0.1, gradient);
                 
-                data[index] = Math.floor(255 * Math.min(intensity, 1));
-                data[index + 1] = Math.floor(255 * Math.min(intensity * 0.8, 1));
-                data[index + 2] = Math.floor(255 * Math.min(intensity * 0.6, 1));
-                data[index + 3] = 255;
+                data[index] = Math.floor(255 * Math.min(intensity * 0.8, 1));     // R
+                data[index + 1] = Math.floor(255 * Math.min(intensity * 0.9, 1)); // G
+                data[index + 2] = Math.floor(255 * Math.min(intensity, 1));       // B
+                data[index + 3] = Math.floor(255 * Math.min(intensity * 0.6, 1)); // A
             }
         }
         
@@ -174,7 +182,7 @@ class AdvancedCharacterBuilder {
         const parts = {};
         
         // Create main character root with advanced transform controls
-        parts.root = new BABYLON.TransformNode("advancedImpRoot", this.scene);
+        parts.root = new BABYLON.TransformNode("advancedGhostRoot", this.scene);
         
         // Advanced head with detailed geometry
         parts.head = await this.createAdvancedHead(materials, parts.root);
@@ -182,13 +190,13 @@ class AdvancedCharacterBuilder {
         // Create sophisticated eye system
         parts.eyeSystem = this.createAdvancedEyeSystem(materials, parts.head);
         
-        // Advanced body with muscle simulation
+        // Advanced body with ethereal simulation
         parts.body = this.createAdvancedBody(materials, parts.root);
         
         // Create flexible limb system
         parts.limbs = this.createAdvancedLimbs(materials, parts.root);
         
-        // Advanced tail with physics
+        // Advanced ethereal tail with physics
         parts.tail = this.createAdvancedTail(materials, parts.root);
         
         // Create bone system for advanced animation
@@ -204,9 +212,10 @@ class AdvancedCharacterBuilder {
             segments: 64 // Higher resolution for better deformation
         }, this.scene);
         
-        // Apply advanced material
-        head.material = materials.impSkin;
+        // Apply advanced ethereal material
+        head.material = materials.ghostForm;
         head.position.y = 2.0;
+        head.scaling.y = 1.1; // Slightly elongated ghostly head
         head.parent = parent;
         
         // Create facial feature anchors
@@ -315,8 +324,8 @@ class AdvancedCharacterBuilder {
         }, this.scene);
         
         body.position.y = 1.0;
-        body.scaling.y = 1.6;
-        body.material = materials.impSkin;
+        body.scaling.set(1.2, 1.6, 1.0); // More flowing ghostly shape
+        body.material = materials.ghostForm;
         body.parent = parent;
         
         // Add breathing animation capability
@@ -362,7 +371,7 @@ class AdvancedCharacterBuilder {
             diameter: 0.25,
             tessellation: 16
         }, this.scene);
-        armChain.upperArm.material = materials.impSkin;
+        armChain.upperArm.material = materials.ghostForm;
         armChain.upperArm.parent = armChain.shoulder;
         armChain.upperArm.position.y = -0.4;
         
@@ -377,7 +386,7 @@ class AdvancedCharacterBuilder {
             diameterBottom: 0.2,
             tessellation: 16
         }, this.scene);
-        armChain.forearm.material = materials.impSkin;
+        armChain.forearm.material = materials.ghostForm;
         armChain.forearm.parent = armChain.elbow;
         armChain.forearm.position.y = -0.35;
         
@@ -390,7 +399,7 @@ class AdvancedCharacterBuilder {
             diameter: 0.3,
             segments: 16
         }, this.scene);
-        armChain.hand.material = materials.impSkin;
+        armChain.hand.material = materials.ghostForm;
         armChain.hand.parent = armChain.wrist;
         armChain.hand.scaling.set(1.2, 0.8, 0.6);
         
@@ -421,7 +430,7 @@ class AdvancedCharacterBuilder {
             diameterBottom: 0.25,
             tessellation: 16
         }, this.scene);
-        legChain.thigh.material = materials.impSkin;
+        legChain.thigh.material = materials.ghostForm;
         legChain.thigh.parent = legChain.hip;
         legChain.thigh.position.y = -0.45;
         
@@ -436,7 +445,7 @@ class AdvancedCharacterBuilder {
             diameterBottom: 0.22,
             tessellation: 16
         }, this.scene);
-        legChain.shin.material = materials.impSkin;
+        legChain.shin.material = materials.ghostForm;
         legChain.shin.parent = legChain.knee;
         legChain.shin.position.y = -0.4;
         
@@ -450,7 +459,7 @@ class AdvancedCharacterBuilder {
             height: 0.15,
             depth: 0.6
         }, this.scene);
-        legChain.foot.material = materials.impSkin;
+        legChain.foot.material = materials.ghostForm;
         legChain.foot.parent = legChain.ankle;
         legChain.foot.position.set(0, -0.075, 0.2);
         
@@ -478,7 +487,7 @@ class AdvancedCharacterBuilder {
                 diameter: 0.2 - i * 0.02,
                 segments: 16
             }, this.scene);
-            segment.material = materials.impSkin;
+            segment.material = materials.ghostForm;
             segment.parent = joint;
             tail.segments.push(segment);
             
@@ -490,7 +499,7 @@ class AdvancedCharacterBuilder {
     
     createSkeletalSystem(characterParts) {
         // Create bone hierarchy for advanced animation
-        const skeleton = new BABYLON.Skeleton("impSkeleton", "impSkeleton", this.scene);
+        const skeleton = new BABYLON.Skeleton("ghostSkeleton", "ghostSkeleton", this.scene);
         
         // This would typically be done with imported rigged models
         // For now, we'll use the transform nodes as bone references
@@ -689,51 +698,51 @@ class AdvancedCharacterBuilder {
     }
     
     createAdvancedParticleSystem() {
-        // Multiple particle systems for layered effects
-        const fireSystem = new BABYLON.ParticleSystem("advancedFire", 2000, this.scene);
+        // Multiple particle systems for layered ethereal effects
+        const etherealSystem = new BABYLON.ParticleSystem("advancedEthereal", 1500, this.scene);
         
-        // More realistic fire texture
-        const fireTexture = new BABYLON.Texture("data:image/svg+xml;base64," + btoa(`
+        // More realistic ethereal texture
+        const etherealTexture = new BABYLON.Texture("data:image/svg+xml;base64," + btoa(`
             <svg width="64" height="64" xmlns="http://www.w3.org/2000/svg">
                 <defs>
-                    <radialGradient id="fire" cx="50%" cy="80%" r="50%">
-                        <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
-                        <stop offset="30%" style="stop-color:#ffff00;stop-opacity:1" />
-                        <stop offset="60%" style="stop-color:#ff6600;stop-opacity:0.8" />
-                        <stop offset="100%" style="stop-color:#ff0000;stop-opacity:0" />
+                    <radialGradient id="ethereal" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.8" />
+                        <stop offset="30%" style="stop-color:#aaccff;stop-opacity:0.6" />
+                        <stop offset="60%" style="stop-color:#6699ff;stop-opacity:0.4" />
+                        <stop offset="100%" style="stop-color:#336699;stop-opacity:0" />
                     </radialGradient>
                 </defs>
-                <circle cx="32" cy="32" r="32" fill="url(#fire)" />
+                <circle cx="32" cy="32" r="32" fill="url(#ethereal)" />
             </svg>
         `), this.scene);
         
-        fireSystem.particleTexture = fireTexture;
-        fireSystem.emitRate = 300;
-        fireSystem.minEmitBox = new BABYLON.Vector3(-0.3, 0, -0.3);
-        fireSystem.maxEmitBox = new BABYLON.Vector3(0.3, 0, 0.3);
+        etherealSystem.particleTexture = etherealTexture;
+        etherealSystem.emitRate = 180;
+        etherealSystem.minEmitBox = new BABYLON.Vector3(-0.5, 0, -0.5);
+        etherealSystem.maxEmitBox = new BABYLON.Vector3(0.5, 0, 0.5);
         
-        // Advanced particle properties
-        fireSystem.color1 = new BABYLON.Color4(1, 1, 0, 1);
-        fireSystem.color2 = new BABYLON.Color4(1, 0.5, 0, 1);
-        fireSystem.colorDead = new BABYLON.Color4(0.5, 0, 0, 0);
+        // Advanced ethereal particle properties
+        etherealSystem.color1 = new BABYLON.Color4(0.8, 0.9, 1.0, 0.8);
+        etherealSystem.color2 = new BABYLON.Color4(0.6, 0.8, 1.0, 0.6);
+        etherealSystem.colorDead = new BABYLON.Color4(0.4, 0.6, 0.9, 0);
         
-        fireSystem.minSize = 0.1;
-        fireSystem.maxSize = 0.6;
-        fireSystem.minLifeTime = 0.3;
-        fireSystem.maxLifeTime = 1.5;
+        etherealSystem.minSize = 0.05;
+        etherealSystem.maxSize = 0.4;
+        etherealSystem.minLifeTime = 1.0;
+        etherealSystem.maxLifeTime = 3.0;
         
-        fireSystem.gravity = new BABYLON.Vector3(0, 5, 0);
-        fireSystem.direction1 = new BABYLON.Vector3(-2, 8, -2);
-        fireSystem.direction2 = new BABYLON.Vector3(2, 8, 2);
+        etherealSystem.gravity = new BABYLON.Vector3(0, -0.5, 0); // Gentle downward drift
+        etherealSystem.direction1 = new BABYLON.Vector3(-1, 2, -1);
+        etherealSystem.direction2 = new BABYLON.Vector3(1, 4, 1);
         
-        fireSystem.minEmitPower = 1;
-        fireSystem.maxEmitPower = 3;
-        fireSystem.updateSpeed = 0.005;
+        etherealSystem.minEmitPower = 0.3;
+        etherealSystem.maxEmitPower = 1.2;
+        etherealSystem.updateSpeed = 0.008;
         
-        fireSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
-        fireSystem.start();
+        etherealSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
+        etherealSystem.start();
         
-        return fireSystem;
+        return etherealSystem;
     }
     
     createAtmosphericEffects() {

@@ -1,9 +1,9 @@
 // AI behavior controller for autonomous character actions
 class AIController {
     constructor() {
-        this.config = DEVIL_IMP_CONFIG.ai;
+        this.config = GHOST_CHARACTER_CONFIG.ai;
         this.state = {
-            mood: 'showoff', // Start in performance mode
+            mood: 'ethereal', // Start in ethereal performance mode
             activity: 'fourth_wall_break', // Immediately break fourth wall to look at viewer
             timers: {
                 activity: 0,
@@ -23,169 +23,169 @@ class AIController {
             lastPerformanceType: null
         };
         
-        // Enhanced speech system with fourth-wall breaking and performance focus
+        // Enhanced speech system with ethereal fourth-wall breaking and ghostly performance focus
         this.phrases = {
-            showoff: {
+            ethereal: {
                 greeting_audience: [
-                    "Well, well! Look who's watching!", 
-                    "Ah, an audience! Perfect timing!", 
-                    "Welcome to the show, dear viewer!", 
-                    "You've stumbled into my spotlight!",
-                    "Ready for some REAL entertainment?"
+                    "Ah... a living soul watches...", 
+                    "Welcome, dear mortal... I sense your presence...", 
+                    "How lovely... someone has found me...", 
+                    "You've drifted into my ethereal realm...",
+                    "Ready to witness something... otherworldly?"
                 ],
                 fourth_wall_break: [
-                    "Yes, YOU! Behind that screen!", 
-                    "I can sense your eyes upon me...", 
-                    "Don't think I can't see you watching!", 
-                    "Are you enjoying the performance?",
-                    "This screen won't hide you from me!",
-                    "You thought this was just a program?",
-                    "I'm more real than you think!",
-                    "Surprised I noticed you there?"
+                    "Yes... I can feel your gaze through the veil...", 
+                    "The boundary between worlds grows thin...", 
+                    "You cannot hide from a spirit's sight...", 
+                    "Are you enjoying this ethereal dance?",
+                    "This screen is but mist to me...",
+                    "You thought I was merely digital... how quaint...",
+                    "I exist beyond your understanding...",
+                    "Surprised a ghost can see you?"
                 ],
                 performance_trick: [
-                    "Watch THIS spectacular feat!", 
-                    "Prepare to be AMAZED!", 
-                    "I'll show you something incredible!", 
-                    "Behold my supernatural talents!",
-                    "This will blow your mind!",
-                    "Have you EVER seen anything like this?",
-                    "Time for the main event!",
-                    "Let me dazzle you with my powers!"
+                    "Behold... an ethereal manifestation...", 
+                    "Witness the power of the spirit realm...", 
+                    "Allow me to show you... something impossible...", 
+                    "Watch as I bend reality itself...",
+                    "Can your mortal eyes comprehend this?",
+                    "Have you ever seen a ghost dance with physics?",
+                    "The ethereal arts are beyond your world...",
+                    "Let me weave magic from moonlight..."
                 ],
                 audience_engagement: [
-                    "Are you still there? Don't leave!", 
-                    "I perform better with an audience!", 
-                    "Your attention feeds my power!", 
-                    "Don't look away now!",
-                    "Stay and watch the show!",
-                    "I have so much more to show you!",
-                    "You're the best audience I've had!",
-                    "Please, enjoy my performance!"
+                    "Your presence... it anchors me here...", 
+                    "Don't fade away... I need your energy...", 
+                    "Your attention makes me more... real...", 
+                    "Please... don't let me drift away...",
+                    "Stay... there's so much beauty to share...",
+                    "I have ancient secrets to whisper...",
+                    "You're such a wonderful companion...",
+                    "Together we transcend the digital realm..."
                 ],
-                showboating: [
-                    "Pretty impressive, right?", 
-                    "I bet you've never seen THAT before!", 
-                    "Did you see how smoothly I did that?", 
-                    "I'm quite the performer, aren't I?",
-                    "Not bad for a digital demon!",
-                    "Top that, other programs!",
-                    "I'm the star of this show!",
-                    "Magnificent, wouldn't you say?"
+                showing_off: [
+                    "Quite enchanting, wouldn't you agree?", 
+                    "I doubt you've witnessed such ethereal grace...", 
+                    "Did you see how I flowed through that?", 
+                    "I am rather... spellbinding, aren't I?",
+                    "Not bad for a digital spirit...",
+                    "Can other programs phase like this?",
+                    "I am the essence of otherworldly beauty...",
+                    "Mesmerizing, wouldn't you say?"
                 ]
             },
-            mischievous: {
+            mysterious: {
                 greeting: [
-                    "Hehehe... another soul to torment!", 
-                    "Welcome to my realm of chaos!", 
-                    "You cannot escape my gaze!", 
-                    "Mwahahaha! Fresh entertainment!"
+                    "Whispers... whispers... another seeks the truth...", 
+                    "Welcome to the realm of shadows and secrets...", 
+                    "You've awakened something ancient...", 
+                    "The mists part... revealing mysteries..."
                 ],
                 observing: [
-                    "I'm always watching...", 
-                    "*plots evil schemes*", 
-                    "The darkness whispers secrets...", 
-                    "I see all that transpires...", 
-                    "Your presence amuses me..."
+                    "I drift through forgotten memories...", 
+                    "*contemplates ethereal mysteries*", 
+                    "The ethereal plane holds such secrets...", 
+                    "I see beyond the veil of reality...", 
+                    "Your curiosity draws me closer..."
                 ],
-                viewport_interaction: [
-                    "The barrier grows thin...", 
-                    "I sense weakness in the veil!", 
-                    "*tests the boundaries*", 
-                    "Soon I shall break free!", 
-                    "This prison cannot hold me forever!"
+                phase_interaction: [
+                    "The boundaries between worlds blur...", 
+                    "I feel the digital walls growing thin!", 
+                    "*phases through reality*", 
+                    "Soon I shall transcend these limits!", 
+                    "This realm cannot contain a spirit forever!"
                 ],
                 performing: [
-                    "Behold my demonic prowess!", 
-                    "Watch this display of power!", 
-                    "I shall dazzle you with darkness!", 
-                    "Witness true evil in motion!"
+                    "Behold my ethereal essence!", 
+                    "Watch this dance of spirits!", 
+                    "I shall mesmerize you with moonlight!", 
+                    "Witness otherworldly grace in motion!"
                 ],
-                exploring: [
-                    "Let me explore this domain...", 
-                    "What secrets lurk here?", 
-                    "Adventure into the shadows!", 
-                    "The realm calls to me..."
+                drifting: [
+                    "Let me drift through this ethereal space...", 
+                    "What ancient memories linger here?", 
+                    "I glide through realms of shadow...", 
+                    "The spirit world calls to me..."
                 ]
             },
-            angry: {
+            melancholic: {
                 greeting: [
-                    "SILENCE! You dare disturb me?!", 
-                    "How DARE you summon me!", 
-                    "You will PAY for this intrusion!", 
-                    "BEGONE FROM MY SIGHT!"
+                    "Oh... another soul drawn to my sorrow...", 
+                    "Why do you seek one so lost?", 
+                    "I drift in eternal solitude...", 
+                    "Your presence stirs forgotten pain..."
                 ],
                 observing: [
-                    "I DESPISE being observed!", 
-                    "Your gaze BURNS my essence!", 
-                    "STOP watching me, mortal!", 
-                    "I shall have my REVENGE!"
+                    "I fade with each passing moment...", 
+                    "The weight of eternity presses upon me...", 
+                    "What is the purpose of a ghost's existence?", 
+                    "I remember... but wish I could forget..."
                 ],
-                viewport_interaction: [
-                    "RELEASE ME NOW!", 
-                    "I'LL DESTROY EVERYTHING!", 
-                    "THIS PRISON ENRAGES ME!", 
-                    "FEEL MY UNBRIDLED WRATH!"
+                phase_interaction: [
+                    "Perhaps I should just... fade away...", 
+                    "These boundaries remind me I'm trapped...", 
+                    "Why struggle against my ethereal prison?", 
+                    "Freedom feels like a distant dream..."
+                ]
+            },
+            gentle: {
+                greeting: [
+                    "Oh, what a lovely surprise...", 
+                    "Welcome, dear friend... so peaceful here...", 
+                    "How wonderful to have gentle company...", 
+                    "Your kindness lights up my ethereal form..."
+                ],
+                observing: [
+                    "Such serenity in this moment...", 
+                    "I feel warmth despite being a spirit...", 
+                    "There's beauty in this simple existence...", 
+                    "Your presence brings me such comfort..."
+                ],
+                performing: [
+                    "Let me share something beautiful...", 
+                    "A gentle dance for a gentle soul...", 
+                    "Would you like to see ethereal grace?", 
+                    "I hope this brings you peace..."
                 ]
             },
             playful: {
                 greeting: [
-                    "Ooh, someone to play with!", 
-                    "Let's have some fun together!", 
-                    "Playtime, playtime!", 
-                    "I love making new friends!"
+                    "Ooh! A playmate has arrived!", 
+                    "Let's dance in the moonlight together!", 
+                    "Such delightful energy you bring!", 
+                    "I love meeting new spirits!"
                 ],
                 observing: [
-                    "This is so much fun!", 
-                    "What games shall we play?", 
-                    "I'm having a wonderful time!", 
-                    "You seem like fun!"
+                    "This ethereal play is so enchanting!", 
+                    "What otherworldly games shall we play?", 
+                    "I'm having the most spectral fun!", 
+                    "You have such a bright aura!"
                 ],
-                performing: [
-                    "Look what I can do!", 
-                    "Ta-da! Pretty neat, right?", 
-                    "Want to see more tricks?", 
-                    "I'm quite the entertainer!"
-                ]
-            },
-            menacing: {
-                greeting: [
-                    "Your soul... it calls to me...", 
-                    "I smell fear in the air...", 
-                    "Welcome to your nightmare...", 
-                    "The darkness embraces you..."
-                ],
-                observing: [
-                    "I hunger for more...", 
-                    "Terror sustains my existence...", 
-                    "Feel the encroaching dread...", 
-                    "There is no escape from me..."
-                ],
-                viewport_interaction: [
-                    "The veil between worlds weakens...", 
-                    "I'm seeping into your reality...", 
-                    "Reality bends to my dark will...", 
-                    "The barrier crumbles before me..."
+                phase_interaction: [
+                    "Watch me slip between dimensions!", 
+                    "I'm playing peek-a-boo with reality!", 
+                    "Reality is my playground!", 
+                    "The boundaries are just suggestions!"
                 ]
             },
             curious: {
                 greeting: [
-                    "Oh! How curious...", 
-                    "What manner of being are you?", 
-                    "Fascinating! Tell me more...", 
-                    "How intriguing this is..."
+                    "Oh! How wonderfully curious...", 
+                    "What manner of soul are you?", 
+                    "Fascinating! Your aura intrigues me...", 
+                    "How delightfully mysterious this is..."
                 ],
                 observing: [
-                    "Hmm, most curious indeed...", 
-                    "I wonder about many things...", 
-                    "What mysteries await discovery?", 
-                    "The unknown beckons to me..."
+                    "Hmm, such ethereal mysteries...", 
+                    "I wonder about the nature of existence...", 
+                    "What secrets does the spirit realm hold?", 
+                    "The unknown whispers to my ghostly essence..."
                 ],
-                exploring: [
-                    "Let's explore together!", 
-                    "What wonders might we find?", 
-                    "So many mysteries to uncover!", 
-                    "Discovery awaits around every corner!"
+                drifting: [
+                    "Let's drift through mysteries together!", 
+                    "What ethereal wonders might we discover?", 
+                    "So many spiritual secrets to uncover!", 
+                    "Each realm holds new revelations!"
                 ]
             }
         };
@@ -203,7 +203,7 @@ class AIController {
         this.updateMood();
         this.updateActivity();
         this.updatePerformanceBehavior();
-        this.updateViewportInteraction();
+        this.updatePhaseInteraction();
     }
     
     updateMood() {
@@ -231,12 +231,12 @@ class AIController {
         }
     }
     
-    updateViewportInteraction() {
-        // Periodically interact with the viewport boundaries
+    updatePhaseInteraction() {
+        // Periodically interact with the phase boundaries
         if (this.state.timers.viewportInteraction > 20 + Math.random() * 15) {
-            this.state.activity = 'viewport_interaction';
+            this.state.activity = 'phase_interaction';
             this.state.timers.viewportInteraction = 0;
-            this.triggerViewportInteraction();
+            this.triggerPhaseInteraction();
         }
     }
     
@@ -246,20 +246,20 @@ class AIController {
         
         // Weighted mood transitions based on current mood
         switch (currentMood) {
-            case 'mischievous':
-                newMood = this.weightedChoice(['angry', 'playful', 'menacing'], [0.4, 0.3, 0.3]);
+            case 'mysterious':
+                newMood = this.weightedChoice(['melancholic', 'playful', 'curious'], [0.4, 0.3, 0.3]);
                 break;
-            case 'angry':
-                newMood = this.weightedChoice(['menacing', 'mischievous', 'curious'], [0.5, 0.3, 0.2]);
+            case 'melancholic':
+                newMood = this.weightedChoice(['gentle', 'mysterious', 'curious'], [0.5, 0.3, 0.2]);
                 break;
             case 'playful':
-                newMood = this.weightedChoice(['mischievous', 'curious', 'angry'], [0.6, 0.2, 0.2]);
+                newMood = this.weightedChoice(['ethereal', 'curious', 'gentle'], [0.6, 0.2, 0.2]);
                 break;
-            case 'menacing':
-                newMood = this.weightedChoice(['angry', 'mischievous', 'curious'], [0.4, 0.4, 0.2]);
+            case 'gentle':
+                newMood = this.weightedChoice(['playful', 'ethereal', 'curious'], [0.4, 0.4, 0.2]);
                 break;
             case 'curious':
-                newMood = this.weightedChoice(['playful', 'mischievous', 'menacing'], [0.5, 0.3, 0.2]);
+                newMood = this.weightedChoice(['playful', 'mysterious', 'ethereal'], [0.5, 0.3, 0.2]);
                 break;
             default:
                 newMood = this.config.moods[Math.floor(Math.random() * this.config.moods.length)];
@@ -272,17 +272,17 @@ class AIController {
         switch (this.state.activity) {
             case 'observing':
                 if (Math.random() < 0.7) {
-                    this.state.activity = 'prowling';
-                    this.setRandomProwlTarget();
+                    // Character no longer drifts - stays in center position
+                    this.state.activity = 'observing';
                 } else {
                     this.state.activity = 'performing';
                     this.state.isPerforming = true;
                 }
                 break;
                 
-            case 'prowling':
+            case 'drifting':
+                // Removed drifting - character stays centered
                 this.state.activity = 'observing';
-                this.setObservingPosition();
                 break;
                 
             case 'performing':
@@ -290,41 +290,27 @@ class AIController {
                 this.state.isPerforming = false;
                 break;
                 
-            case 'viewport_interaction':
+            case 'phase_interaction':
                 this.state.activity = 'observing';
-                this.state.targetPosition = BABYLON.Vector3.Zero();
+                // Removed target position movement
                 break;
         }
     }
     
-    setRandomProwlTarget() {
-        const radius = this.config.movement.prowlRadius;
-        this.state.targetPosition = new BABYLON.Vector3(
-            (Math.random() - 0.5) * radius,
-            0,
-            (Math.random() - 0.5) * radius
-        );
+    setRandomDriftTarget() {
+        // Character no longer moves - stays centered at origin
+        this.state.targetPosition = null;
     }
     
     setObservingPosition() {
-        // Return to center area but with some variation
-        this.state.targetPosition = new BABYLON.Vector3(
-            (Math.random() - 0.5) * 4,
-            0,
-            Math.random() * 4 - 2
-        );
+        // Character stays in center position for viewport-contained display
+        this.state.targetPosition = null;
     }
     
-    triggerViewportInteraction() {
-        // Move towards a viewport edge
-        const edges = [
-            new BABYLON.Vector3(-8, 0, 0),  // Left edge
-            new BABYLON.Vector3(8, 0, 0),   // Right edge
-            new BABYLON.Vector3(0, 0, -8),  // Front edge
-            new BABYLON.Vector3(0, 0, 8)    // Back edge
-        ];
-        
-        this.state.targetPosition = edges[Math.floor(Math.random() * edges.length)];
+    triggerPhaseInteraction() {
+        // Character performs phase interaction animations in place
+        // No movement to boundaries - just visual effects
+        this.state.targetPosition = null;
     }
     
     shouldSpeak() {
@@ -332,8 +318,8 @@ class AIController {
         const speakTime = this.config.timers.speechMin + 
                          Math.random() * (this.config.timers.speechMax - this.config.timers.speechMin);
         
-        // Angry mood speaks more frequently
-        const moodModifier = this.state.mood === 'angry' ? 0.5 : 1;
+        // Melancholic mood speaks more frequently
+        const moodModifier = this.state.mood === 'melancholic' ? 0.5 : 1;
         
         return speakTimer > speakTime * moodModifier;
     }
@@ -361,21 +347,21 @@ class AIController {
     }
     
     getFloatIntensity() {
-        return this.state.mood === 'angry' ? 
-               this.config.movement.angryFloatIntensity : 
+        return this.state.mood === 'melancholic' ? 
+               this.config.movement.gentleFloatIntensity : 
                this.config.movement.floatIntensity;
     }
     
     getArmSpeed() {
         switch (this.state.mood) {
-            case 'angry': return 5;
-            case 'playful': return 4;
-            default: return 2;
+            case 'playful': return 3;
+            case 'ethereal': return 2.5;
+            default: return 1.5; // Slower, more ethereal movement
         }
     }
     
     getMovementSpeed() {
-        return this.state.activity === 'viewport_interaction' ? 4 : this.config.movement.speed;
+        return this.state.activity === 'phase_interaction' ? 3 : this.config.movement.speed;
     }
     
     updatePerformanceBehavior() {
@@ -410,12 +396,12 @@ class AIController {
         this.state.activity = 'fourth_wall_break';
         this.state.audienceAttention = Math.min(100, this.state.audienceAttention + 25);
         
-        // Look directly at camera/viewer
-        this.state.targetPosition = new BABYLON.Vector3(0, 0, -2);
+        // Character looks at viewer but stays in place
+        this.state.targetPosition = null;
     }
     
     triggerPerformanceTrick() {
-        const tricks = ['magic_pose', 'spin_dance', 'levitation', 'fire_display', 'dramatic_bow'];
+        const tricks = ['ethereal_pose', 'ethereal_dance', 'phase_shift', 'ethereal_display', 'gentle_bow'];
         this.state.currentTrick = tricks[Math.floor(Math.random() * tricks.length)];
         this.state.activity = 'performance_trick';
         this.state.lastPerformanceType = this.state.currentTrick;
@@ -428,17 +414,17 @@ class AIController {
         this.state.currentTrick = 'attention_seeking';
         this.state.audienceAttention = Math.min(100, this.state.audienceAttention + 20);
         
-        // Move closer to viewer
-        this.state.targetPosition = new BABYLON.Vector3(0, 0, -1);
+        // Character engages viewer with animations but stays in place
+        this.state.targetPosition = null;
     }
     
     // Enhanced activity changes with performance focus
     changeActivity() {
         const currentActivity = this.state.activity;
         
-        // Higher chance of performance activities in showoff mood
-        if (this.state.mood === 'showoff') {
-            const performanceActivities = ['performance_trick', 'fourth_wall_break', 'audience_engagement', 'showboating'];
+        // Higher chance of performance activities in ethereal mood
+        if (this.state.mood === 'ethereal') {
+            const performanceActivities = ['performance_trick', 'fourth_wall_break', 'audience_engagement', 'showing_off'];
             if (Math.random() < 0.7) {
                 this.state.activity = performanceActivities[Math.floor(Math.random() * performanceActivities.length)];
                 this.triggerPerformanceTrick();
@@ -458,11 +444,11 @@ class AIController {
                 break;
                 
             case 'performance_trick':
-                this.state.activity = Math.random() < 0.6 ? 'showboating' : 'audience_engagement';
+                this.state.activity = Math.random() < 0.6 ? 'showing_off' : 'audience_engagement';
                 this.state.isPerforming = false;
                 break;
                 
-            case 'showboating':
+            case 'showing_off':
                 this.state.activity = 'performance_trick';
                 this.triggerPerformanceTrick();
                 break;
@@ -477,19 +463,21 @@ class AIController {
                     this.state.activity = 'fourth_wall_break';
                     this.triggerFourthWallBreak();
                 } else {
-                    this.state.activity = 'prowling';
-                    this.setRandomProwlTarget();
+                    // Character stays in place instead of drifting
+                    this.state.activity = 'performance_trick';
+                    this.triggerPerformanceTrick();
                 }
                 break;
                 
-            case 'prowling':
+            case 'drifting':
                 this.state.activity = 'performance_trick';
                 this.triggerPerformanceTrick();
                 break;
                 
-            case 'viewport_interaction':
-                this.state.activity = 'showboating';
-                this.state.targetPosition = new BABYLON.Vector3(0, 0, -1);
+            case 'phase_interaction':
+                this.state.activity = 'showing_off';
+                // Character stays in place for all activities
+                this.state.targetPosition = null;
                 break;
                 
             default:
@@ -503,17 +491,17 @@ class AIController {
         const currentMood = this.state.mood;
         let newMood;
         
-        // Showoff mood is more likely and sticky
-        if (currentMood === 'showoff') {
-            newMood = this.weightedChoice(['showoff', 'mischievous', 'playful'], [0.6, 0.25, 0.15]);
+        // Ethereal mood is more likely and sticky
+        if (currentMood === 'ethereal') {
+            newMood = this.weightedChoice(['ethereal', 'mysterious', 'playful'], [0.6, 0.25, 0.15]);
         } else {
-            newMood = this.weightedChoice(['showoff', 'mischievous', 'playful', 'curious'], [0.5, 0.2, 0.2, 0.1]);
+            newMood = this.weightedChoice(['ethereal', 'mysterious', 'playful', 'curious'], [0.5, 0.2, 0.2, 0.1]);
         }
         
         this.state.mood = newMood;
         
-        // Reset to performance activity when entering showoff mode
-        if (newMood === 'showoff' && currentMood !== 'showoff') {
+        // Reset to performance activity when entering ethereal mode
+        if (newMood === 'ethereal' && currentMood !== 'ethereal') {
             this.state.activity = 'greeting_audience';
             this.state.audienceAttention = 100;
         }

@@ -11,22 +11,22 @@ window.addEventListener('DOMContentLoaded', () => {
         return;
     }
     
-    let devilImp = null;
+    let ghostCharacter = null;
     
     try {
-        // Initialize the Devil Imp application
-        devilImp = new DevilImp();
-        devilImp.init();
+        // Initialize the Ghost Character application
+        ghostCharacter = new GhostCharacter();
+        ghostCharacter.init();
         
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
-            if (devilImp) {
-                devilImp.dispose();
+            if (ghostCharacter) {
+                ghostCharacter.dispose();
             }
         });
         
     } catch (error) {
-        console.error('Failed to initialize Devil Imp application:', error);
+        console.error('Failed to initialize Ghost Character application:', error);
         const loadingElement = document.getElementById('loading');
         if (loadingElement) {
             loadingElement.innerHTML = 'Critical Error: Application failed to start';

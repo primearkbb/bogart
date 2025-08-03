@@ -1,4 +1,4 @@
-// Audio management for the Devil Imp
+// Audio management for the Ghost Character
 class AudioManager {
     constructor() {
         this.audioContext = null;
@@ -22,7 +22,7 @@ class AudioManager {
     playSound(soundType) {
         if (!this.isReady()) return;
         
-        const config = DEVIL_IMP_CONFIG.audio[soundType];
+        const config = GHOST_CHARACTER_CONFIG.audio[soundType];
         if (!config) return;
         
         const now = this.audioContext.currentTime;
@@ -62,15 +62,15 @@ class AudioManager {
     }
     
     // Predefined sound methods for convenience
-    playDemonicEntry() {
-        this.playSound('demonicEntry');
+    playEtherealEntry() {
+        this.playSound('etherealEntry');
     }
     
-    playCackle() {
-        this.playSound('cackle');
+    playWhisper() {
+        this.playSound('whisper');
     }
     
-    playViewportAttack() {
-        this.playSound('viewportAttack');
+    playPhaseShift() {
+        this.playSound('phaseShift');
     }
 }

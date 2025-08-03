@@ -14,10 +14,10 @@ const DEVIL_IMP_CONFIG = {
         fogEnd: 25
     },
     
-    // Camera settings
+    // Camera settings - positioned for viewport-contained stationary character
     camera: {
-        position: { x: 0, y: 2.5, z: -7 },
-        target: { x: 0, y: 1.2, z: 0 }
+        position: { x: 0, y: 2.5, z: -5 },  // Closer to better frame the character
+        target: { x: 0, y: 1.5, z: 0 }      // Slightly higher target for better view
     },
     
     // Lighting settings
