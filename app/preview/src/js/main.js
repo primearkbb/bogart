@@ -24,9 +24,15 @@ class CompatibilityChecker {
     static checkWebGL() {
         try {
             const canvas = document.createElement('canvas');
-            return !!(window.WebGLRenderingContext && 
-                     (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+            const webglContext = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            console.log('WebGL context creation result:', !!webglContext);
+            if (webglContext) {
+                console.log('WebGL vendor:', webglContext.getParameter(webglContext.VENDOR));
+                console.log('WebGL renderer:', webglContext.getParameter(webglContext.RENDERER));
+            }
+            return !!(window.WebGLRenderingContext && webglContext);
         } catch (e) {
+            console.error('WebGL check error:', e);
             return false;
         }
     }
@@ -52,12 +58,9 @@ window.addEventListener('DOMContentLoaded', () => {
     // Check browser compatibility first
     const compatibility = CompatibilityChecker.check();
     if (!compatibility.compatible) {
-        const loadingElement = document.getElementById('loading');
-        if (loadingElement) {
-            loadingElement.innerHTML = `Browser not supported: ${compatibility.issues.join(', ')}`;
-            loadingElement.style.color = '#ff3333';
-        }
-        return;
+        console.warn('Compatibility issues detected:', compatibility.issues);
+        // Continue anyway for testing - the app might still work
+        console.log('🚀 Attempting to run app despite compatibility warnings...');
     }
     
     let ghostCharacter = null;
@@ -77,27 +80,36 @@ window.addEventListener('DOMContentLoaded', () => {
         });
         
     } catch (error) {
-        // Silent error handling in production
+        // Show detailed error for debugging
+        console.error('Critical initialization error:', error);
         const loadingElement = document.getElementById('loading');
         if (loadingElement) {
-            loadingElement.innerHTML = 'Critical Error: Application failed to start';
+            loadingElement.innerHTML = `Critical Error: ${error.message}`;
             loadingElement.style.color = '#ff3333';
         }
     }
     
     // Global error handling
     window.addEventListener('error', (event) => {
-        // Silent error handling in production
+        // Show detailed error for debugging
+        console.error('Global error:', event.error || event.message, 'at', event.filename, ':', event.lineno);
         const loadingElement = document.getElementById('loading');
         if (loadingElement && loadingElement.style.display !== 'none') {
-            loadingElement.innerHTML = 'Error: Application encountered an issue';
+            const errorMsg = event.error ? event.error.message : event.message;
+            loadingElement.innerHTML = `Error: ${errorMsg}`;
             loadingElement.style.color = '#ff3333';
         }
     });
     
     // Handle unhandled promise rejections
     window.addEventListener('unhandledrejection', (event) => {
-        // Silent promise rejection handling in production
+        // Show detailed promise rejection for debugging
+        console.error('Unhandled promise rejection:', event.reason);
+        const loadingElement = document.getElementById('loading');
+        if (loadingElement && loadingElement.style.display !== 'none') {
+            loadingElement.innerHTML = `Promise Error: ${event.reason.message || event.reason}`;
+            loadingElement.style.color = '#ff3333';
+        }
         event.preventDefault(); // Prevent default browser behavior
     });
 });

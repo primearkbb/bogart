@@ -334,7 +334,21 @@ class AIController {
     
     getRandomPhrase(category) {
         const moodPhrases = this.phrases[this.state.mood];
-        const phraseList = moodPhrases[category] || moodPhrases.observing || this.phrases.mischievous.observing;
+        if (!moodPhrases) {
+            console.error(`Invalid mood: ${this.state.mood}`);
+            // Fallback to ethereal mood
+            const fallbackPhrases = this.phrases.ethereal[category] || this.phrases.ethereal.observing;
+            return fallbackPhrases[Math.floor(Math.random() * fallbackPhrases.length)];
+        }
+        
+        const phraseList = moodPhrases[category] || moodPhrases.observing || this.phrases.ethereal.observing;
+        if (!phraseList || phraseList.length === 0) {
+            console.error(`No phrases found for mood: ${this.state.mood}, category: ${category}`);
+            // Ultimate fallback
+            const ultimateFallback = this.phrases.ethereal.observing;
+            return ultimateFallback[Math.floor(Math.random() * ultimateFallback.length)];
+        }
+        
         return phraseList[Math.floor(Math.random() * phraseList.length)];
     }
     

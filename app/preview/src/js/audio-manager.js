@@ -4,6 +4,7 @@ class AudioManager {
         this.audioContext = null;
         this.isInitialized = false;
         this.audioElements = new Map();
+        this.playingAudio = new Set(); // Track currently playing audio to prevent overlaps
         this.audioFiles = {
             // Sound effects
             'ghost-wind': 'assets/audio/ghost-wind.mp3',
@@ -60,18 +61,39 @@ class AudioManager {
     }
 
     playAudioFile(key, volume = 1.0) {
+        // Prevent audio overlap
+        if (this.playingAudio.has(key)) {
+            console.log(`Audio ${key} already playing, skipping`);
+            return null;
+        }
+
         if (!this.audioElements.has(key)) {
             console.warn(`Audio file not found: ${key}`);
             // Fallback to generated sound
             this.playWhisper();
-            return;
+            return null;
         }
 
         const audio = this.audioElements.get(key);
         
+        // Mark as playing
+        this.playingAudio.add(key);
+        
         // Reset audio to beginning and set volume
         audio.currentTime = 0;
         audio.volume = Math.max(0, Math.min(1, volume));
+        
+        // Add ended event listener to remove from playing set
+        const onEnded = () => {
+            this.playingAudio.delete(key);
+            audio.removeEventListener('ended', onEnded);
+            audio.removeEventListener('pause', onEnded);
+            audio.removeEventListener('error', onEnded);
+        };
+        
+        audio.addEventListener('ended', onEnded, { once: true });
+        audio.addEventListener('pause', onEnded, { once: true });
+        audio.addEventListener('error', onEnded, { once: true });
         
         // Play the audio
         const playPromise = audio.play();
@@ -81,6 +103,7 @@ class AudioManager {
                 console.log(`Playing audio: ${key}`);
             }).catch(error => {
                 console.warn(`Failed to play audio ${key}:`, error);
+                this.playingAudio.delete(key); // Remove from playing set on error
                 // Fallback to generated sound
                 this.playWhisper();
             });

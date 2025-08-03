@@ -16,11 +16,22 @@
     <div id="debug">Initializing ghostly presence...</div>
     <canvas id="renderCanvas"></canvas>
 
-    <!-- Core Libraries -->
+    <!-- Core Libraries - Using stable release with GLB support -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" onerror="console.log('GSAP failed to load')"></script>
-    <script src="https://cdn.babylonjs.com/babylon.js" onerror="console.log('Babylon.js failed to load')"></script>
-    <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js" onerror="console.log('Babylon materials failed to load')"></script>
-    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js" onerror="console.log('Babylon loaders failed to load')"></script>
+    <script src="https://cdn.babylonjs.com/babylon.js" onload="console.log('✅ Babylon.js loaded')" onerror="console.error('❌ Babylon.js failed')"></script>
+    <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js" onload="console.log('✅ Babylon materials loaded')" onerror="console.error('❌ Babylon materials failed')"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js" onload="console.log('✅ Babylon loaders loaded')" onerror="console.error('❌ Babylon loaders failed')"></script>
+    <script>
+        // Debug available loaders
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 Checking Babylon.js loader support...');
+            if (typeof BABYLON !== 'undefined' && BABYLON.SceneLoader) {
+                console.log('GLB supported:', BABYLON.SceneLoader.IsPluginForExtensionAvailable('.glb'));
+                console.log('GLTF supported:', BABYLON.SceneLoader.IsPluginForExtensionAvailable('.gltf'));
+                console.log('OBJ supported:', BABYLON.SceneLoader.IsPluginForExtensionAvailable('.obj'));
+            }
+        });
+    </script>
     
     <!-- Application Scripts -->
     <script src="js/ghost-config.js"></script>

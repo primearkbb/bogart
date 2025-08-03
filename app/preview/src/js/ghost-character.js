@@ -191,7 +191,37 @@ class GhostCharacter {
     
     async createEngine() {
         const config = GHOST_CHARACTER_CONFIG.engine;
-        this.engine = new BABYLON.Engine(this.canvas, true, config);
+        console.log('🔧 Attempting to create Babylon.js engine...');
+        
+        try {
+            // Try to create engine with various fallback options
+            let engineOptions = [
+                { ...config }, // Original config
+                { antialias: false, preserveDrawingBuffer: true, stencil: true }, // Reduced config
+                { antialias: false, preserveDrawingBuffer: false, stencil: false }, // Minimal config
+                {} // Default config
+            ];
+            
+            for (let i = 0; i < engineOptions.length; i++) {
+                try {
+                    console.log(`🔧 Engine creation attempt ${i + 1} with config:`, engineOptions[i]);
+                    this.engine = new BABYLON.Engine(this.canvas, true, engineOptions[i]);
+                    
+                    if (this.engine) {
+                        console.log('✅ Babylon.js engine created successfully');
+                        return;
+                    }
+                } catch (engineError) {
+                    console.warn(`⚠️ Engine creation attempt ${i + 1} failed:`, engineError);
+                    continue;
+                }
+            }
+            
+            throw new Error('All engine creation attempts failed');
+        } catch (error) {
+            console.error('❌ Failed to create Babylon.js engine:', error);
+            throw error;
+        }
     }
     
     async createScene() {
@@ -655,7 +685,7 @@ class GhostCharacter {
                         speechCategory = 'fourth_wall_break';
                         // Play sensing voice line occasionally
                         if (Math.random() < 0.15) {
-                            const sensingTimeout = setTimeout(() => this.audioManager.playGhostSensing(), 1000 + Math.random() * 2000);
+                            this.setTrackedTimeout(() => this.audioManager.playGhostSensing(), 1000 + Math.random() * 2000);
                         }
                         break;
                     case 'performance_trick':
@@ -663,21 +693,21 @@ class GhostCharacter {
                         // Play performance or magic voice line
                         if (Math.random() < 0.2) {
                             const voiceLine = Math.random() < 0.5 ? 'playGhostPerformance' : 'playGhostMagic';
-                            const performanceTimeout = setTimeout(() => this.audioManager[voiceLine](), 800 + Math.random() * 3000);
+                            this.setTrackedTimeout(() => this.audioManager[voiceLine](), 800 + Math.random() * 3000);
                         }
                         break;
                     case 'audience_engagement':
                         speechCategory = 'audience_engagement';
                         // Play friendly voice line
                         if (Math.random() < 0.15) {
-                            const friendlyTimeout = setTimeout(() => this.audioManager.playGhostFriendly(), 1200 + Math.random() * 2500);
+                            this.setTrackedTimeout(() => this.audioManager.playGhostFriendly(), 1200 + Math.random() * 2500);
                         }
                         break;
                     case 'showing_off':
                         speechCategory = 'showing_off';
                         // Play magic voice line
                         if (Math.random() < 0.12) {
-                            const magicTimeout = setTimeout(() => this.audioManager.playGhostMagic(), 900 + Math.random() * 2800);
+                            this.setTrackedTimeout(() => this.audioManager.playGhostMagic(), 900 + Math.random() * 2800);
                         }
                         break;
                     case 'greeting_audience':
@@ -687,7 +717,7 @@ class GhostCharacter {
                         speechCategory = 'observing';
                         // Occasionally play ambient sounds
                         if (Math.random() < 0.05) {
-                            const ambientTimeout = setTimeout(() => this.audioManager.playRandomAmbientSound(), 2000 + Math.random() * 4000);
+                            this.setTrackedTimeout(() => this.audioManager.playRandomAmbientSound(), 2000 + Math.random() * 4000);
                         }
                 }
                 
@@ -715,7 +745,7 @@ class GhostCharacter {
                     }
                     // Add eerie sound effects during phase interactions
                     if (Math.random() < 0.2) {
-                        const windTimeout = setTimeout(() => this.audioManager.playGhostWind(), 1500 + Math.random() * 3000);
+                        this.setTrackedTimeout(() => this.audioManager.playGhostWind(), 1500 + Math.random() * 3000);
                     }
                 }
             }
