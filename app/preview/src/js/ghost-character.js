@@ -16,6 +16,7 @@ class ResourceManager {
     }
     
     addTimeout(id) {
+        this.timeouts.add(id);
     }
     
     addEventListener(element, event, handler) {
@@ -134,10 +135,12 @@ class GhostCharacter {
             const greetingTimeout = this.setTrackedTimeout(() => {
                 this.speak('greeting_audience');
                 this.audioManager.playEtherealEntry();
-                // Play welcome voice line
-                const welcomeTimeout = this.setTrackedTimeout(() => {
-                    this.audioManager.playGhostWelcome();
-                }, 1000);
+                // Maybe play welcome voice line (50% chance)
+                if (Math.random() < 0.5) {
+                    const welcomeTimeout = this.setTrackedTimeout(() => {
+                        this.audioManager.playGhostWelcome();
+                    }, 3000 + Math.random() * 4000);
+                }
                 const loadingEl = document.getElementById('loading');
                 if (loadingEl) loadingEl.style.display = 'none';
                 
@@ -156,10 +159,16 @@ class GhostCharacter {
     
     setupEventListeners() {
         // Audio initialization on user interaction
-        this.canvas.addEventListener('click', () => {
-            this.audioManager.init();
+        const initAudio = async () => {
+            await this.audioManager.init();
             document.getElementById('info').style.display = 'none';
-        }, { once: true });
+        };
+        
+        this.canvas.addEventListener('click', initAudio, { once: true });
+        
+        // Also enable on any user interaction
+        document.addEventListener('click', initAudio, { once: true });
+        document.addEventListener('keydown', initAudio, { once: true });
         
         // Handle window resize and orientation changes
         const handleViewportChange = () => {
@@ -199,24 +208,14 @@ class GhostCharacter {
         // Create lighting
         this.createLighting();
         
-        // Create advanced character with fallback
-        try {
-            this.advancedCharacterBuilder = new AdvancedCharacterBuilder(this.scene);
-            const characterData = await this.advancedCharacterBuilder.createAdvancedCharacter();
-            this.characterParts = characterData.parts;
-            this.characterMaterials = characterData.materials;
-            this.isAdvancedCharacter = true;
-        } catch (error) {
-            // Advanced character failed, using fallback - silently continue
-            // Fallback to basic character
-            this.characterBuilder = new CharacterBuilder(this.scene);
-            const characterData = this.characterBuilder.createCharacter();
-            this.characterParts = characterData.parts;
-            this.characterMaterials = characterData.materials;
-            this.characterBuilder.createGround(this.characterMaterials);
-            this.particleSystem = this.characterBuilder.createParticleSystem(this.characterParts.root);
-            this.isAdvancedCharacter = false;
-        }
+        // Use basic character builder for stability
+        this.characterBuilder = new CharacterBuilder(this.scene);
+        const characterData = this.characterBuilder.createCharacter();
+        this.characterParts = characterData.parts;
+        this.characterMaterials = characterData.materials;
+        this.characterBuilder.createGround(this.characterMaterials);
+        this.particleSystem = this.characterBuilder.createParticleSystem(this.characterParts.root);
+        this.isAdvancedCharacter = false;
         
         // Immediately set character to look at viewer
         this.initializeViewerFocus();
@@ -285,12 +284,11 @@ class GhostCharacter {
         this.positionSpeechBubble();
         
         // Hide after configured time
-        const hideTimeout = setTimeout(() => {
+        const hideTimeout = this.setTrackedTimeout(() => {
             if (speechBubble) {
                 speechBubble.style.display = 'none';
             }
         }, GHOST_CHARACTER_CONFIG.speech.displayDuration);
-        this.timeouts.add(hideTimeout);
     }
     
     positionSpeechBubble() {
@@ -364,9 +362,13 @@ class GhostCharacter {
         const floatIntensity = baseFloatIntensity * performanceMultiplier;
         this.characterParts.root.position.y = 0.2 + Math.sin(this.time * 1.2) * floatIntensity;
         
-        // Advanced eye tracking and viewer focus
-        if (this.advancedCharacterBuilder) {
-            this.advancedCharacterBuilder.updateEyeTracking(deltaTime);
+        // Basic eye tracking
+        if (this.characterParts.leftEye && this.characterParts.rightEye) {
+            // Simple eye following behavior
+            const lookIntensity = 0.1;
+            const time = this.time * 0.5;
+            this.characterParts.leftEye.rotation.y = Math.sin(time) * lookIntensity;
+            this.characterParts.rightEye.rotation.y = Math.sin(time) * lookIntensity;
         }
         
         // Fourth wall breaking - enhanced head tracking with ethereal movement
@@ -396,10 +398,10 @@ class GhostCharacter {
             const armSpeed = this.getPerformanceArmSpeed();
             
             if (aiState.activity === 'performance_trick') {
-                // Use advanced performance animations
-                const currentTrick = this.aiController.getCurrentTrick();
-                if (this.advancedCharacterBuilder && currentTrick) {
-                    this.advancedCharacterBuilder.playPerformanceAnimation(currentTrick);
+                // Basic performance animations
+                if (this.characterParts.leftArm && this.characterParts.rightArm) {
+                    this.characterParts.leftArm.rotation.z = 0.5 + Math.sin(this.time * 4) * 0.3;
+                    this.characterParts.rightArm.rotation.z = -0.5 - Math.sin(this.time * 4) * 0.3;
                 }
             } else if (aiState.activity === 'fourth_wall_break') {
                 // Advanced pointing gesture using limb chains - more fluid for ghost
@@ -566,30 +568,30 @@ class GhostCharacter {
                     case 'fourth_wall_break':
                         speechCategory = 'fourth_wall_break';
                         // Play sensing voice line occasionally
-                        if (Math.random() < 0.3) {
-                            const sensingTimeout = setTimeout(() => this.audioManager.playGhostSensing(), 500);
+                        if (Math.random() < 0.15) {
+                            const sensingTimeout = setTimeout(() => this.audioManager.playGhostSensing(), 1000 + Math.random() * 2000);
                         }
                         break;
                     case 'performance_trick':
                         speechCategory = 'performance_trick';
                         // Play performance or magic voice line
-                        if (Math.random() < 0.4) {
+                        if (Math.random() < 0.2) {
                             const voiceLine = Math.random() < 0.5 ? 'playGhostPerformance' : 'playGhostMagic';
-                            const performanceTimeout = setTimeout(() => this.audioManager[voiceLine](), 500);
+                            const performanceTimeout = setTimeout(() => this.audioManager[voiceLine](), 800 + Math.random() * 3000);
                         }
                         break;
                     case 'audience_engagement':
                         speechCategory = 'audience_engagement';
                         // Play friendly voice line
-                        if (Math.random() < 0.3) {
-                            const friendlyTimeout = setTimeout(() => this.audioManager.playGhostFriendly(), 500);
+                        if (Math.random() < 0.15) {
+                            const friendlyTimeout = setTimeout(() => this.audioManager.playGhostFriendly(), 1200 + Math.random() * 2500);
                         }
                         break;
                     case 'showing_off':
                         speechCategory = 'showing_off';
                         // Play magic voice line
-                        if (Math.random() < 0.3) {
-                            const magicTimeout = setTimeout(() => this.audioManager.playGhostMagic(), 500);
+                        if (Math.random() < 0.12) {
+                            const magicTimeout = setTimeout(() => this.audioManager.playGhostMagic(), 900 + Math.random() * 2800);
                         }
                         break;
                     case 'greeting_audience':
@@ -598,13 +600,16 @@ class GhostCharacter {
                     default:
                         speechCategory = 'observing';
                         // Occasionally play ambient sounds
-                        if (Math.random() < 0.1) {
-                            const ambientTimeout = setTimeout(() => this.audioManager.playRandomAmbientSound(), 1000);
+                        if (Math.random() < 0.05) {
+                            const ambientTimeout = setTimeout(() => this.audioManager.playRandomAmbientSound(), 2000 + Math.random() * 4000);
                         }
                 }
                 
                 this.speak(speechCategory);
-                this.audioManager.playWhisper();
+                // Play ghost voice line randomly (only 30% chance)
+                if (Math.random() < 0.3) {
+                    this.audioManager.playRandomGhostLine();
+                }
                 this.aiController.resetSpeechTimer();
             }
             
@@ -616,12 +621,15 @@ class GhostCharacter {
             
             // Handle phase interactions
             if (this.aiController.state.activity === 'phase_interaction') {
-                if (Math.random() < 0.015) { // 1.5% chance per frame during interaction
+                if (Math.random() < 0.008) { // 0.8% chance per frame during interaction
                     this.speak('phase_interaction');
-                    this.audioManager.playPhaseShift();
+                    // Only occasionally play phase shift sound
+                    if (Math.random() < 0.3) {
+                        this.audioManager.playPhaseShift();
+                    }
                     // Add eerie sound effects during phase interactions
-                    if (Math.random() < 0.5) {
-                        const windTimeout = setTimeout(() => this.audioManager.playGhostWind(), 200);
+                    if (Math.random() < 0.2) {
+                        const windTimeout = setTimeout(() => this.audioManager.playGhostWind(), 1500 + Math.random() * 3000);
                     }
                 }
             }

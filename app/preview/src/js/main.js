@@ -65,6 +65,8 @@ window.addEventListener('DOMContentLoaded', () => {
     try {
         // Initialize the Ghost Character application
         ghostCharacter = new GhostCharacter();
+        // Expose globally for testing
+        window.ghostCharacter = ghostCharacter;
         ghostCharacter.init();
         
         // Cleanup on page unload

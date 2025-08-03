@@ -8,23 +8,23 @@ class CharacterBuilder {
     createMaterials() {
         const materials = {};
         
-        // Ghost material (ethereal translucent)
+        // Ghost material (ethereal translucent) - improved
         materials.ghost = new BABYLON.StandardMaterial("ghostMat", this.scene);
         const ghostConfig = this.config.materials.ghost;
-        materials.ghost.diffuseColor = new BABYLON.Color3(ghostConfig.diffuse.r, ghostConfig.diffuse.g, ghostConfig.diffuse.b);
-        materials.ghost.specularColor = new BABYLON.Color3(ghostConfig.specular.r, ghostConfig.specular.g, ghostConfig.specular.b);
-        materials.ghost.emissiveColor = new BABYLON.Color3(ghostConfig.emissive.r, ghostConfig.emissive.g, ghostConfig.emissive.b);
-        materials.ghost.specularPower = ghostConfig.specularPower;
-        materials.ghost.roughness = ghostConfig.roughness;
-        materials.ghost.alpha = ghostConfig.alpha;
+        materials.ghost.diffuseColor = new BABYLON.Color3(0.95, 0.98, 1.0);
+        materials.ghost.specularColor = new BABYLON.Color3(0.9, 0.95, 1.0);
+        materials.ghost.emissiveColor = new BABYLON.Color3(0.15, 0.25, 0.4);
+        materials.ghost.specularPower = 200;
+        materials.ghost.alpha = 0.85;
         materials.ghost.alphaMode = BABYLON.Engine.ALPHA_BLEND;
+        materials.ghost.backFaceCulling = false;
         
-        // Eye material (ethereal glowing blue)
+        // Eye material (ethereal glowing blue) - improved
         materials.eye = new BABYLON.StandardMaterial("eyeMat", this.scene);
-        const eyeConfig = this.config.materials.eye;
-        materials.eye.diffuseColor = new BABYLON.Color3(eyeConfig.diffuse.r, eyeConfig.diffuse.g, eyeConfig.diffuse.b);
-        materials.eye.emissiveColor = new BABYLON.Color3(eyeConfig.emissive.r, eyeConfig.emissive.g, eyeConfig.emissive.b);
-        materials.eye.specularPower = eyeConfig.specularPower;
+        materials.eye.diffuseColor = new BABYLON.Color3(0.4, 0.7, 1.0);
+        materials.eye.emissiveColor = new BABYLON.Color3(0.3, 0.5, 0.8);
+        materials.eye.specularPower = 400;
+        materials.eye.specularColor = new BABYLON.Color3(0.8, 0.9, 1.0);
         
         // Dark material (pupils, ethereal features)
         materials.dark = new BABYLON.StandardMaterial("darkMat", this.scene);
@@ -57,46 +57,66 @@ class CharacterBuilder {
         parts.head = ghostGeometry.head;
         parts.body = ghostGeometry.body;
         
-        // Eyes (larger, more ethereal)
-        parts.leftEye = this.createEye("leftEye", -0.35, 2.1, 0.6, materials.eye, ghostRoot);
-        parts.rightEye = this.createEye("rightEye", 0.35, 2.1, 0.6, materials.eye, ghostRoot);
+        // Eyes (better proportioned and positioned)
+        parts.leftEye = this.createEye("leftEye", -0.25, 2.2, 0.5, materials.eye, ghostRoot);
+        parts.rightEye = this.createEye("rightEye", 0.25, 2.2, 0.5, materials.eye, ghostRoot);
         
-        // Pupils (smaller, more mysterious)
-        parts.leftPupil = this.createPupil("leftPupil", -0.35, 2.1, 0.65, materials.dark, ghostRoot);
-        parts.rightPupil = this.createPupil("rightPupil", 0.35, 2.1, 0.65, materials.dark, ghostRoot);
+        // Pupils (properly sized)
+        parts.leftPupil = this.createPupil("leftPupil", -0.25, 2.2, 0.52, materials.dark, ghostRoot);
+        parts.rightPupil = this.createPupil("rightPupil", 0.25, 2.2, 0.52, materials.dark, ghostRoot);
         
         // Mouth (subtle, ethereal)
         parts.mouth = this.createMouth(materials.dark, ghostRoot);
         
-        // Simple floating arms
-        parts.leftArm = this.createSimpleArm("leftArm", -0.8, 1.4, 0.3, materials.ghost, ghostRoot);
-        parts.rightArm = this.createSimpleArm("rightArm", 0.8, 1.4, -0.3, materials.ghost, ghostRoot);
+        // Simple floating arms - better positioned
+        parts.leftArm = this.createSimpleArm("leftArm", -0.7, 1.6, 0.2, materials.ghost, ghostRoot);
+        parts.rightArm = this.createSimpleArm("rightArm", 0.7, 1.6, -0.2, materials.ghost, ghostRoot);
         
         return { parts, materials };
     }
     
     createSimpleGhostGeometry(material, parent) {
-        // Create a simple, clean ghost geometry with:
-        // - Semi-sphere head on top
-        // - Cylinder body 
-        // - Wavy bottom edge
+        // Create a simple, clean ghost geometry with improved proportions
         
-        // Head: Semi-sphere (hemisphere)
+        // Head: Full sphere positioned better
         const head = BABYLON.MeshBuilder.CreateSphere("ghostHead", {
-            diameter: 1.4,
-            segments: 32,
-            slice: Math.PI // Only upper half (hemisphere)
+            diameter: 1.2,
+            segments: 24
         }, this.scene);
-        head.position.y = 2.3;
+        head.position.y = 2.1;
         head.material = material;
         head.parent = parent;
         
-        // Body: Cylinder with custom wavy bottom
-        const body = this.createWavyBottomCylinder("ghostBody", material, parent);
+        // Body: Improved shape with better proportions
+        const body = this.createImprovedGhostBody("ghostBody", material, parent);
         
         return { head, body };
     }
     
+    createImprovedGhostBody(name, material, parent) {
+        // Create a simple but elegant ghost body shape
+        const body = BABYLON.MeshBuilder.CreateCylinder(name, {
+            height: 2.2,
+            diameterTop: 1.0,
+            diameterBottom: 1.4,
+            tessellation: 16,
+            faceColors: [
+                new BABYLON.Color4(0.95, 0.98, 1.0, 0.85), // top
+                new BABYLON.Color4(0.9, 0.95, 1.0, 0.7),   // bottom
+                new BABYLON.Color4(0.95, 0.98, 1.0, 0.8)   // sides
+            ]
+        }, this.scene);
+        
+        body.position.y = 1.0;
+        body.material = material;
+        body.parent = parent;
+        
+        // Add wavy bottom edge using simple scaling animation
+        body.scaling.y = 1.0;
+        
+        return body;
+    }
+
     createWavyBottomCylinder(name, material, parent) {
         // Create custom geometry for cylinder with wavy bottom edge
         const height = 2.0;
@@ -198,12 +218,12 @@ class CharacterBuilder {
     }
     
     createSimpleArm(name, x, y, rotZ, material, parent) {
-        // Simple tapered cylinder for arms
+        // Simple tapered cylinder for arms - improved proportions
         const arm = BABYLON.MeshBuilder.CreateCylinder(name, {
-            height: 1.0,
-            diameterTop: 0.25,
-            diameterBottom: 0.15,
-            tessellation: 16
+            height: 0.8,
+            diameterTop: 0.18,
+            diameterBottom: 0.12,
+            tessellation: 12
         }, this.scene);
         arm.position.set(x, y, 0);
         arm.rotation.z = rotZ;
@@ -215,8 +235,8 @@ class CharacterBuilder {
     
     createEye(name, x, y, z, material, parent) {
         const eye = BABYLON.MeshBuilder.CreateSphere(name, {
-            diameter: this.config.size.eyeDiameter,
-            segments: 16
+            diameter: 0.2,
+            segments: 12
         }, this.scene);
         eye.position.set(x, y, z);
         eye.material = material;
@@ -226,7 +246,7 @@ class CharacterBuilder {
     
     createPupil(name, x, y, z, material, parent) {
         const pupil = BABYLON.MeshBuilder.CreateSphere(name, {
-            diameter: this.config.size.pupilDiameter,
+            diameter: 0.08,
             segments: 8
         }, this.scene);
         pupil.position.set(x, y, z);
@@ -236,15 +256,13 @@ class CharacterBuilder {
     }
     
     createMouth(material, parent) {
-        // Subtle ethereal mouth - less prominent than the imp's
-        const mouth = BABYLON.MeshBuilder.CreateTorus("mouth", {
-            diameter: 0.3,
-            thickness: 0.03,
-            tessellation: 16
+        // Subtle ethereal mouth - small and mysterious
+        const mouth = BABYLON.MeshBuilder.CreateSphere("mouth", {
+            diameter: 0.12,
+            segments: 8
         }, this.scene);
-        mouth.position.set(0, 1.8, 0.6);
-        mouth.rotation.x = Math.PI / 2;
-        mouth.scaling.y = 0.6;
+        mouth.position.set(0, 2.0, 0.52);
+        mouth.scaling.set(1.2, 0.6, 0.8);
         mouth.material = material;
         mouth.parent = parent;
         return mouth;
@@ -263,41 +281,33 @@ class CharacterBuilder {
     }
     
     createParticleSystem(emitter) {
-        const config = GHOST_CHARACTER_CONFIG.particles;
-        const particleSystem = new BABYLON.ParticleSystem("etherealParticles", config.count, this.scene);
+        // Simplified particle system for better performance
+        const particleSystem = new BABYLON.ParticleSystem("etherealParticles", 300, this.scene);
         
-        // Simple ethereal particle texture
-        const etherealTexture = new BABYLON.Texture("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAABklEQVQIHWPY/x8AAm8B6F6F0wsAAAAASUVORK5CYII=", this.scene);
-        particleSystem.particleTexture = etherealTexture;
+        // Create simple white texture
+        particleSystem.particleTexture = null; // Use default
         
         particleSystem.emitter = emitter;
-        particleSystem.minEmitBox = new BABYLON.Vector3(-0.8, 0, -0.8);
-        particleSystem.maxEmitBox = new BABYLON.Vector3(0.8, 0, 0.8);
+        particleSystem.minEmitBox = new BABYLON.Vector3(-0.3, 0, -0.3);
+        particleSystem.maxEmitBox = new BABYLON.Vector3(0.3, 0, 0.3);
         
-        const startColor = config.colors.start;
-        const endColor = config.colors.end;
-        particleSystem.color1 = new BABYLON.Color4(startColor.r, startColor.g, startColor.b, startColor.a);
-        particleSystem.color2 = new BABYLON.Color4(endColor.r, endColor.g, endColor.b, endColor.a);
+        particleSystem.color1 = new BABYLON.Color4(0.8, 0.9, 1.0, 0.6);
+        particleSystem.color2 = new BABYLON.Color4(0.6, 0.8, 0.9, 0.3);
         particleSystem.colorDead = new BABYLON.Color4(0, 0, 0, 0);
         
-        particleSystem.minSize = config.minSize;
-        particleSystem.maxSize = config.maxSize;
-        particleSystem.minLifeTime = config.minLifeTime;
-        particleSystem.maxLifeTime = config.maxLifeTime;
-        particleSystem.emitRate = config.emitRate;
+        particleSystem.minSize = 0.02;
+        particleSystem.maxSize = 0.15;
+        particleSystem.minLifeTime = 1.0;
+        particleSystem.maxLifeTime = 2.0;
+        particleSystem.emitRate = 50;
         
         particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
-        particleSystem.gravity = new BABYLON.Vector3(0, -1, 0); // Gentle downward drift
-        particleSystem.direction1 = new BABYLON.Vector3(-2, 3, -2);
-        particleSystem.direction2 = new BABYLON.Vector3(2, 5, 2);
-        particleSystem.minEmitPower = 0.5;
-        particleSystem.maxEmitPower = 1.5;
-        particleSystem.updateSpeed = 0.008; // Slower, more ethereal movement
-        
-        // Add ethereal particle behavior
-        particleSystem.startSizeFunction = () => {
-            return config.minSize + Math.random() * (config.maxSize - config.minSize);
-        };
+        particleSystem.gravity = new BABYLON.Vector3(0, -0.5, 0);
+        particleSystem.direction1 = new BABYLON.Vector3(-1, 1, -1);
+        particleSystem.direction2 = new BABYLON.Vector3(1, 2, 1);
+        particleSystem.minEmitPower = 0.3;
+        particleSystem.maxEmitPower = 0.8;
+        particleSystem.updateSpeed = 0.01;
         
         particleSystem.start();
         return particleSystem;

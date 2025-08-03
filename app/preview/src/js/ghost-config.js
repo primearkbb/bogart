@@ -73,8 +73,8 @@ const GHOST_CHARACTER_CONFIG = {
             moodChangeMax: 20,
             activityChangeMin: 4,
             activityChangeMax: 10,
-            speechMin: 5,
-            speechMax: 12,
+            speechMin: 8,
+            speechMax: 18,
             blinkMin: 3,
             blinkMax: 7
         },
