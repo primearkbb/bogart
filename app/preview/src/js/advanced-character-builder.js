@@ -7,6 +7,90 @@ class AdvancedCharacterBuilder {
         this.facialRig = null;
         this.skeletalSystem = null;
     }
+
+    createUnifiedGhostMesh(name, options) {
+        // Create a unified ethereal mesh that flows naturally
+        const { topRadius, bottomRadius, height, segments, etherealShape, flowingBottom } = options;
+        
+        // Create custom geometry for unified ghost form
+        const positions = [];
+        const indices = [];
+        const normals = [];
+        const uvs = [];
+        
+        const segmentHeight = height / segments;
+        
+        for (let i = 0; i <= segments; i++) {
+            const y = i * segmentHeight - height / 2;
+            const progress = i / segments;
+            
+            // Create ethereal flowing shape using sinusoidal variation
+            let radius = topRadius + (bottomRadius - topRadius) * progress;
+            
+            if (etherealShape) {
+                // Add ethereal undulation to make it more ghost-like
+                const undulation = Math.sin(progress * Math.PI * 2) * 0.1 + Math.sin(progress * Math.PI * 4) * 0.05;
+                radius += undulation;
+            }
+            
+            if (flowingBottom && progress > 0.7) {
+                // Create wispy trailing bottom for ghost effect
+                const fadeOut = (progress - 0.7) / 0.3;
+                radius *= (1 - fadeOut * 0.6);
+            }
+            
+            // Create vertices for this ring
+            const ringVertices = 32;
+            for (let j = 0; j <= ringVertices; j++) {
+                const angle = (j / ringVertices) * Math.PI * 2;
+                
+                // Add ethereal displacement
+                let currentRadius = radius;
+                if (etherealShape) {
+                    const displacement = Math.sin(angle * 3 + progress * Math.PI) * 0.05;
+                    currentRadius += displacement;
+                }
+                
+                const x = Math.cos(angle) * currentRadius;
+                const z = Math.sin(angle) * currentRadius;
+                
+                positions.push(x, y, z);
+                
+                // Calculate normal (simplified)
+                const normal = new BABYLON.Vector3(x, 0, z).normalize();
+                normals.push(normal.x, normal.y, normal.z);
+                
+                // UV coordinates
+                uvs.push(j / ringVertices, progress);
+            }
+        }
+        
+        // Create indices for triangles
+        const ringsVertexCount = 33; // ringVertices + 1
+        for (let i = 0; i < segments; i++) {
+            for (let j = 0; j < 32; j++) { // ringVertices
+                const current = i * ringsVertexCount + j;
+                const next = current + ringsVertexCount;
+                
+                // Create two triangles for each quad
+                indices.push(current, next, current + 1);
+                indices.push(current + 1, next, next + 1);
+            }
+        }
+        
+        // Create mesh
+        const mesh = new BABYLON.Mesh(name, this.scene);
+        const vertexData = new BABYLON.VertexData();
+        
+        vertexData.positions = positions;
+        vertexData.indices = indices;
+        vertexData.normals = normals;
+        vertexData.uvs = uvs;
+        
+        vertexData.applyToMesh(mesh);
+        
+        return mesh;
+    }
     
     async createAdvancedCharacter() {
         // Create sophisticated materials first
@@ -206,16 +290,18 @@ class AdvancedCharacterBuilder {
     }
     
     async createAdvancedHead(materials, parent) {
-        // Create head with more sophisticated geometry
-        const head = BABYLON.MeshBuilder.CreateSphere("advancedHead", {
-            diameter: 1.6,
-            segments: 64 // Higher resolution for better deformation
-        }, this.scene);
+        // Create unified ghostly head with flowing ethereal shape
+        const head = this.createUnifiedGhostMesh("advancedHead", {
+            topRadius: 0.9,
+            bottomRadius: 0.7,
+            height: 1.8,
+            segments: 64,
+            etherealShape: true
+        });
         
         // Apply advanced ethereal material
         head.material = materials.ghostForm;
         head.position.y = 2.0;
-        head.scaling.y = 1.1; // Slightly elongated ghostly head
         head.parent = parent;
         
         // Create facial feature anchors
@@ -318,13 +404,17 @@ class AdvancedCharacterBuilder {
     }
     
     createAdvancedBody(materials, parent) {
-        const body = BABYLON.MeshBuilder.CreateSphere("advancedBody", {
-            diameter: 1.4,
-            segments: 48
-        }, this.scene);
+        // Create unified flowing ghostly torso that connects seamlessly with head
+        const body = this.createUnifiedGhostMesh("advancedBody", {
+            topRadius: 0.7,
+            bottomRadius: 0.4,
+            height: 2.2,
+            segments: 48,
+            etherealShape: true,
+            flowingBottom: true
+        });
         
-        body.position.y = 1.0;
-        body.scaling.set(1.2, 1.6, 1.0); // More flowing ghostly shape
+        body.position.y = 0.8;
         body.material = materials.ghostForm;
         body.parent = parent;
         
@@ -365,12 +455,15 @@ class AdvancedCharacterBuilder {
         armChain.shoulder.position.set(xMultiplier * 0.8, 1.6, 0);
         armChain.shoulder.parent = parent;
         
-        // Upper arm
-        armChain.upperArm = BABYLON.MeshBuilder.CreateCylinder(`${side}UpperArm`, {
+        // Create flowing upper arm using unified ghost mesh
+        armChain.upperArm = this.createUnifiedGhostMesh(`${side}UpperArm`, {
+            topRadius: 0.15,
+            bottomRadius: 0.12,
             height: 0.8,
-            diameter: 0.25,
-            tessellation: 16
-        }, this.scene);
+            segments: 16,
+            etherealShape: true,
+            flowingBottom: false
+        });
         armChain.upperArm.material = materials.ghostForm;
         armChain.upperArm.parent = armChain.shoulder;
         armChain.upperArm.position.y = -0.4;
@@ -379,13 +472,15 @@ class AdvancedCharacterBuilder {
         armChain.elbow.position.set(0, -0.8, 0);
         armChain.elbow.parent = armChain.shoulder;
         
-        // Forearm
-        armChain.forearm = BABYLON.MeshBuilder.CreateCylinder(`${side}Forearm`, {
+        // Create flowing forearm with ethereal taper
+        armChain.forearm = this.createUnifiedGhostMesh(`${side}Forearm`, {
+            topRadius: 0.12,
+            bottomRadius: 0.08,
             height: 0.7,
-            diameterTop: 0.25,
-            diameterBottom: 0.2,
-            tessellation: 16
-        }, this.scene);
+            segments: 16,
+            etherealShape: true,
+            flowingBottom: true
+        });
         armChain.forearm.material = materials.ghostForm;
         armChain.forearm.parent = armChain.elbow;
         armChain.forearm.position.y = -0.35;
@@ -394,14 +489,18 @@ class AdvancedCharacterBuilder {
         armChain.wrist.position.set(0, -0.7, 0);
         armChain.wrist.parent = armChain.elbow;
         
-        // Hand
-        armChain.hand = BABYLON.MeshBuilder.CreateSphere(`${side}Hand`, {
-            diameter: 0.3,
-            segments: 16
-        }, this.scene);
-        armChain.hand.material = materials.ghostForm;
+        // Create ethereal hand with wispy fingers
+        armChain.hand = this.createUnifiedGhostMesh(`${side}Hand`, {
+            topRadius: 0.08,
+            bottomRadius: 0.04,
+            height: 0.3,
+            segments: 12,
+            etherealShape: true,
+            flowingBottom: true
+        });
+        armChain.hand.material = materials.wisps;
         armChain.hand.parent = armChain.wrist;
-        armChain.hand.scaling.set(1.2, 0.8, 0.6);
+        armChain.hand.scaling.set(1.2, 1.0, 0.8);
         
         return armChain;
     }
@@ -467,34 +566,39 @@ class AdvancedCharacterBuilder {
     }
     
     createAdvancedTail(materials, parent) {
-        const tail = {
-            segments: [],
-            joints: []
+        // Create a single unified flowing tail instead of segments
+        const tail = this.createUnifiedGhostMesh("etherealTail", {
+            topRadius: 0.3,
+            bottomRadius: 0.02,
+            height: 2.5,
+            segments: 32,
+            etherealShape: true,
+            flowingBottom: true
+        });
+        
+        // Position and orient the tail
+        tail.position.set(0, 0.8, -0.5);
+        tail.rotation.x = Math.PI * 0.1; // Slight backward angle
+        tail.material = materials.wisps;
+        tail.parent = parent;
+        
+        // Create joint system for animation
+        const tailSystem = {
+            mainTail: tail,
+            joints: [],
+            segments: [tail]
         };
         
-        const segmentCount = 8;
-        let currentParent = parent;
-        
-        for (let i = 0; i < segmentCount; i++) {
-            // Create joint
+        // Add invisible joints along the tail for animation control
+        for (let i = 0; i < 8; i++) {
             const joint = new BABYLON.TransformNode(`tailJoint${i}`, this.scene);
-            joint.position.set(0, 1 - i * 0.08, -0.3 - i * 0.25);
-            joint.parent = currentParent;
-            tail.joints.push(joint);
-            
-            // Create segment
-            const segment = BABYLON.MeshBuilder.CreateSphere(`tailSegment${i}`, {
-                diameter: 0.2 - i * 0.02,
-                segments: 16
-            }, this.scene);
-            segment.material = materials.ghostForm;
-            segment.parent = joint;
-            tail.segments.push(segment);
-            
-            currentParent = joint;
+            const progress = i / 7;
+            joint.position.set(0, 0.8 - progress * 1.5, -0.5 - progress * 1.0);
+            joint.parent = parent;
+            tailSystem.joints.push(joint);
         }
         
-        return tail;
+        return tailSystem;
     }
     
     createSkeletalSystem(characterParts) {

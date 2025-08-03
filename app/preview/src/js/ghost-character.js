@@ -35,6 +35,10 @@ class GhostCharacter {
             const greetingTimeout = setTimeout(() => {
                 this.speak('greeting_audience');
                 this.audioManager.playEtherealEntry();
+                // Play welcome voice line
+                setTimeout(() => {
+                    this.audioManager.playGhostWelcome();
+                }, 1000);
                 const loadingEl = document.getElementById('loading');
                 if (loadingEl) loadingEl.style.display = 'none';
                 
@@ -466,21 +470,42 @@ class GhostCharacter {
                 switch (aiState.activity) {
                     case 'fourth_wall_break':
                         speechCategory = 'fourth_wall_break';
+                        // Play sensing voice line occasionally
+                        if (Math.random() < 0.3) {
+                            setTimeout(() => this.audioManager.playGhostSensing(), 500);
+                        }
                         break;
                     case 'performance_trick':
                         speechCategory = 'performance_trick';
+                        // Play performance or magic voice line
+                        if (Math.random() < 0.4) {
+                            const voiceLine = Math.random() < 0.5 ? 'playGhostPerformance' : 'playGhostMagic';
+                            setTimeout(() => this.audioManager[voiceLine](), 500);
+                        }
                         break;
                     case 'audience_engagement':
                         speechCategory = 'audience_engagement';
+                        // Play friendly voice line
+                        if (Math.random() < 0.3) {
+                            setTimeout(() => this.audioManager.playGhostFriendly(), 500);
+                        }
                         break;
                     case 'showing_off':
                         speechCategory = 'showing_off';
+                        // Play magic voice line
+                        if (Math.random() < 0.3) {
+                            setTimeout(() => this.audioManager.playGhostMagic(), 500);
+                        }
                         break;
                     case 'greeting_audience':
                         speechCategory = 'greeting_audience';
                         break;
                     default:
                         speechCategory = 'observing';
+                        // Occasionally play ambient sounds
+                        if (Math.random() < 0.1) {
+                            setTimeout(() => this.audioManager.playRandomAmbientSound(), 1000);
+                        }
                 }
                 
                 this.speak(speechCategory);
@@ -499,6 +524,10 @@ class GhostCharacter {
                 if (Math.random() < 0.015) { // 1.5% chance per frame during interaction
                     this.speak('phase_interaction');
                     this.audioManager.playPhaseShift();
+                    // Add eerie sound effects during phase interactions
+                    if (Math.random() < 0.5) {
+                        setTimeout(() => this.audioManager.playGhostWind(), 200);
+                    }
                 }
             }
             
