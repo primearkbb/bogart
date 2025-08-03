@@ -192,6 +192,15 @@ class GhostCharacter {
     async createEngine() {
         const config = GHOST_CHARACTER_CONFIG.engine;
         console.log('🔧 Attempting to create Babylon.js engine...');
+        console.log('Canvas element:', this.canvas);
+        console.log('Canvas dimensions:', this.canvas.width, 'x', this.canvas.height);
+        
+        // Ensure canvas has proper dimensions
+        if (this.canvas.width === 0 || this.canvas.height === 0) {
+            this.canvas.width = 800;
+            this.canvas.height = 600;
+            console.log('⚡ Set default canvas dimensions');
+        }
         
         try {
             // Try to create engine with various fallback options
@@ -199,27 +208,48 @@ class GhostCharacter {
                 { ...config }, // Original config
                 { antialias: false, preserveDrawingBuffer: true, stencil: true }, // Reduced config
                 { antialias: false, preserveDrawingBuffer: false, stencil: false }, // Minimal config
+                { antialias: false, preserveDrawingBuffer: false, stencil: false, powerPreference: "high-performance" }, // Try high performance
+                { antialias: false, preserveDrawingBuffer: false, stencil: false, powerPreference: "low-power" }, // Try low power
+                { antialias: false, preserveDrawingBuffer: false, stencil: false, failIfMajorPerformanceCaveat: false }, // Allow performance caveats
                 {} // Default config
             ];
             
-            for (let i = 0; i < engineOptions.length; i++) {
-                try {
-                    console.log(`🔧 Engine creation attempt ${i + 1} with config:`, engineOptions[i]);
-                    this.engine = new BABYLON.Engine(this.canvas, true, engineOptions[i]);
-                    
-                    if (this.engine) {
-                        console.log('✅ Babylon.js engine created successfully');
-                        return;
+            // Also try different WebGL context types
+            const contextTypes = [true, false]; // true = webgl, false = experimental-webgl
+            
+            for (let contextType of contextTypes) {
+                for (let i = 0; i < engineOptions.length; i++) {
+                    try {
+                        console.log(`🔧 Engine creation attempt ${i + 1} (webgl: ${contextType}) with config:`, engineOptions[i]);
+                        this.engine = new BABYLON.Engine(this.canvas, contextType, engineOptions[i]);
+                        
+                        if (this.engine && this.engine.isWebGPU !== undefined) {
+                            console.log('✅ Babylon.js engine created successfully');
+                            console.log('Engine info:', {
+                                webgl: this.engine._gl ? 'available' : 'not available',
+                                version: this.engine.version,
+                                capabilities: this.engine.getCaps()
+                            });
+                            return;
+                        }
+                    } catch (engineError) {
+                        console.warn(`⚠️ Engine creation attempt ${i + 1} (webgl: ${contextType}) failed:`, engineError.message);
+                        continue;
                     }
-                } catch (engineError) {
-                    console.warn(`⚠️ Engine creation attempt ${i + 1} failed:`, engineError);
-                    continue;
                 }
             }
             
-            throw new Error('All engine creation attempts failed');
+            throw new Error('All engine creation attempts failed - WebGL may not be available on this device/browser');
         } catch (error) {
             console.error('❌ Failed to create Babylon.js engine:', error);
+            
+            // Show user-friendly error message
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) {
+                loadingElement.innerHTML = 'WebGL not supported on this device/browser. Please try a different browser or enable hardware acceleration.';
+                loadingElement.style.color = '#ff6666';
+            }
+            
             throw error;
         }
     }

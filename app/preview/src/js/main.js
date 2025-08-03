@@ -26,15 +26,39 @@ class CompatibilityChecker {
             const canvas = document.createElement('canvas');
             const webglContext = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
             console.log('WebGL context creation result:', !!webglContext);
+            
             if (webglContext) {
                 console.log('WebGL vendor:', webglContext.getParameter(webglContext.VENDOR));
                 console.log('WebGL renderer:', webglContext.getParameter(webglContext.RENDERER));
+                console.log('WebGL version:', webglContext.getParameter(webglContext.VERSION));
+                return true;
+            } else {
+                console.error('WebGL context creation failed');
+                console.log('Available context types:', this.getAvailableContextTypes(canvas));
+                return false;
             }
-            return !!(window.WebGLRenderingContext && webglContext);
         } catch (e) {
             console.error('WebGL check error:', e);
             return false;
         }
+    }
+    
+    static getAvailableContextTypes(canvas) {
+        const contextTypes = ['webgl', 'experimental-webgl', 'webgl2', '2d'];
+        const available = [];
+        
+        for (const type of contextTypes) {
+            try {
+                const ctx = canvas.getContext(type);
+                if (ctx) {
+                    available.push(type);
+                }
+            } catch (e) {
+                // Ignore
+            }
+        }
+        
+        return available;
     }
     
     static checkWebAudio() {
