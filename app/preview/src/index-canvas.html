@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>3D Ghost Character - Canvas Fallback</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden;
+            background: #0d0d1f;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-family: Arial;
+        }
+        canvas {
+            border: 1px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">Canvas Ghost - Click to interact!</div>
+    <canvas id="ghostCanvas"></canvas>
+    
+    <script>
+        // Simple 2D Canvas ghost as fallback
+        const canvas = document.getElementById('ghostCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        let time = 0;
+        let mouseX = canvas.width / 2;
+        let mouseY = canvas.height / 2;
+        
+        // Ghost properties
+        const ghost = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            scale: 1,
+            eyeBlink: false
+        };
+        
+        // Mouse tracking
+        canvas.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+        
+        canvas.addEventListener('click', () => {
+            document.getElementById('info').textContent = 'Boo! I am a ghost!';
+            ghost.scale = 1.2;
+            setTimeout(() => {
+                document.getElementById('info').textContent = 'Canvas Ghost - Click to interact!';
+                ghost.scale = 1;
+            }, 2000);
+        });
+        
+        function drawGhost() {
+            // Clear canvas
+            ctx.fillStyle = '#0d0d1f';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Save context
+            ctx.save();
+            
+            // Move to ghost position
+            ctx.translate(ghost.x, ghost.y);
+            ctx.scale(ghost.scale, ghost.scale);
+            
+            // Float animation
+            const floatY = Math.sin(time * 2) * 10;
+            ctx.translate(0, floatY);
+            
+            // Ghost body (main shape)
+            ctx.beginPath();
+            ctx.fillStyle = 'rgba(240, 240, 255, 0.9)';
+            ctx.strokeStyle = 'rgba(130, 130, 200, 0.5)';
+            ctx.lineWidth = 2;
+            
+            // Top circle
+            ctx.arc(0, -50, 60, Math.PI, 0, false);
+            
+            // Body
+            ctx.lineTo(60, 20);
+            
+            // Wavy bottom
+            for (let i = 0; i < 6; i++) {
+                const x = 60 - (i * 20);
+                const y = 20 + Math.sin(time * 3 + i) * 10;
+                if (i === 0) {
+                    ctx.lineTo(x, y);
+                } else {
+                    ctx.quadraticCurveTo(x + 10, y - 5, x, y);
+                }
+            }
+            
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            
+            // Inner glow
+            const gradient = ctx.createRadialGradient(0, -20, 0, 0, -20, 80);
+            gradient.addColorStop(0, 'rgba(150, 170, 255, 0.3)');
+            gradient.addColorStop(1, 'rgba(150, 170, 255, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            // Eyes
+            const eyeOffsetX = 20;
+            const eyeY = -50;
+            
+            // Eye tracking
+            const dx = (mouseX - ghost.x) * 0.01;
+            const dy = (mouseY - ghost.y) * 0.01;
+            
+            // Left eye
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            if (!ghost.eyeBlink) {
+                ctx.ellipse(-eyeOffsetX + dx, eyeY + dy, 8, 12, 0, 0, Math.PI * 2);
+            } else {
+                ctx.ellipse(-eyeOffsetX + dx, eyeY + dy, 8, 2, 0, 0, Math.PI * 2);
+            }
+            ctx.fill();
+            
+            // Right eye
+            ctx.beginPath();
+            if (!ghost.eyeBlink) {
+                ctx.ellipse(eyeOffsetX + dx, eyeY + dy, 8, 12, 0, 0, Math.PI * 2);
+            } else {
+                ctx.ellipse(eyeOffsetX + dx, eyeY + dy, 8, 2, 0, 0, Math.PI * 2);
+            }
+            ctx.fill();
+            
+            // Eye glow
+            ctx.fillStyle = 'rgba(100, 150, 255, 0.7)';
+            ctx.beginPath();
+            ctx.arc(-eyeOffsetX + dx, eyeY + dy - 3, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(eyeOffsetX + dx, eyeY + dy - 3, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Mouth
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(0, -30, 15, 0, Math.PI, false);
+            ctx.stroke();
+            
+            // Arms
+            ctx.strokeStyle = 'rgba(240, 240, 255, 0.7)';
+            ctx.lineWidth = 20;
+            ctx.lineCap = 'round';
+            
+            // Left arm
+            ctx.beginPath();
+            ctx.moveTo(-40, -20);
+            const leftArmX = -60 + Math.sin(time * 2) * 10;
+            const leftArmY = 0 + Math.cos(time * 2) * 5;
+            ctx.quadraticCurveTo(-50, -10, leftArmX, leftArmY);
+            ctx.stroke();
+            
+            // Right arm
+            ctx.beginPath();
+            ctx.moveTo(40, -20);
+            const rightArmX = 60 + Math.sin(time * 2 + 0.5) * 10;
+            const rightArmY = 0 + Math.cos(time * 2 + 0.5) * 5;
+            ctx.quadraticCurveTo(50, -10, rightArmX, rightArmY);
+            ctx.stroke();
+            
+            // Particles
+            ctx.fillStyle = 'rgba(150, 200, 255, 0.6)';
+            for (let i = 0; i < 10; i++) {
+                const particleX = Math.sin(time + i) * 100;
+                const particleY = -100 + (time * 50 + i * 30) % 200;
+                const size = Math.sin(time * 2 + i) * 2 + 3;
+                ctx.beginPath();
+                ctx.arc(particleX, particleY, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            time += 0.016; // ~60fps
+            
+            // Occasional blinking
+            if (Math.random() < 0.01) {
+                ghost.eyeBlink = true;
+                setTimeout(() => {
+                    ghost.eyeBlink = false;
+                }, 150);
+            }
+            
+            // Smooth follow mouse
+            ghost.x += (mouseX - ghost.x) * 0.05;
+            ghost.y += (mouseY - ghost.y) * 0.05;
+            
+            drawGhost();
+        }
+        
+        // Handle resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        // Start animation
+        animate();
+    </script>
+</body>
+</html>
