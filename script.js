@@ -6,6 +6,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const versions = [
     "latest",
     "preview",
+    "v28",
+    "v27",
     "v26",
     "v25",
     "v24",
